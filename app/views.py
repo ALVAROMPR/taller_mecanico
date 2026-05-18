@@ -235,3 +235,52 @@ appbuilder.add_view(
     icon="fa-list",
     category="Operaciones"
 )
+# ==========================
+# REPORTES
+# ==========================
+class ReporteView(BaseView):
+    route_base = "/reportes"
+
+    @expose("/")
+    def index(self):
+
+        total_clientes = db.session.query(Cliente).count()
+
+        total_vehiculos = db.session.query(Vehiculo).count()
+
+        total_ordenes = db.session.query(
+            OrdenTrabajo
+        ).count()
+
+        ingresos_totales = db.session.query(
+            db.func.sum(OrdenTrabajo.total)
+        ).scalar() or 0
+
+        servicios_populares = db.session.query(
+            Servicio.nombre,
+            db.func.sum(DetalleServicio.cantidad)
+        ).join(
+            DetalleServicio,
+            Servicio.id == DetalleServicio.servicio_id
+        ).group_by(
+            Servicio.nombre
+        ).all()
+
+        return self.render_template(
+            "reportes.html",
+            total_clientes=total_clientes,
+            total_vehiculos=total_vehiculos,
+            total_ordenes=total_ordenes,
+            ingresos_totales=ingresos_totales,
+            servicios_populares=servicios_populares
+        )
+
+
+appbuilder.add_view_no_menu(ReporteView())
+
+appbuilder.add_link(
+    "Dashboard",
+    href="/reportes/",
+    icon="fa-bar-chart",
+    category="Reportes"
+)
