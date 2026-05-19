@@ -156,6 +156,11 @@ class OrdenTrabajo(Model):
         default=datetime.now
     )
 
+    fecha_salida = Column(
+        DateTime,
+        nullable=True
+    )
+
     estado = Column(
         String(50),
         default="Pendiente"
@@ -163,7 +168,7 @@ class OrdenTrabajo(Model):
 
     total = Column(
         Numeric(10, 2),
-        nullable=True
+        default=0
     )
 
     observacion = Column(
@@ -191,13 +196,18 @@ class OrdenTrabajo(Model):
 
     detalles = relationship(
         "DetalleServicio",
-        back_populates="orden"
+        back_populates="orden",
+        cascade="all, delete-orphan"
     )
+
+    def calcular_total(self):
+        self.total = sum(
+            detalle.subtotal or 0
+            for detalle in self.detalles
+        )
 
     def __repr__(self):
         return f"Orden #{self.id}"
-
-
 # ==========================
 # DETALLE SERVICIO
 # ==========================
@@ -223,9 +233,15 @@ class DetalleServicio(Model):
         default=1
     )
 
-    subtotal = Column(
+    precio_unitario = Column(
         Numeric(10, 2),
         nullable=False
+    )
+
+    subtotal = Column(
+        Numeric(10, 2),
+        nullable=False,
+        default=0
     )
 
     orden = relationship(
@@ -237,6 +253,12 @@ class DetalleServicio(Model):
         "Servicio",
         back_populates="detalles"
     )
+
+    def calcular_subtotal(self):
+        self.subtotal = (
+            self.cantidad *
+            self.precio_unitario
+        )
 
     def __repr__(self):
         return f"Detalle {self.id}"

@@ -1,0 +1,195 @@
+{% extends "appbuilder/base.html" %}
+
+{% block content %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="container-fluid" style="padding: 20px; background: #f4f6f9; min-height: 100vh;">
+
+    <!-- TITULO -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h2 style="font-weight: bold; color: #2c3e50;">
+                Panel Administrativo - Taller Mecánico
+            </h2>
+            <p style="color: #7f8c8d;">
+                Resumen general del negocio
+            </p>
+        </div>
+    </div>
+
+    <!-- TARJETAS -->
+    <div class="row">
+
+        <div class="col-md-3">
+            <div class="card shadow"
+                 style="border:none; border-radius:15px; background:linear-gradient(135deg,#3498db,#2980b9); color:white;">
+
+                <div class="card-body">
+                    <h5>Total Clientes</h5>
+                    <h1>{{ total_clientes or 0 }}</h1>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow"
+                 style="border:none; border-radius:15px; background:linear-gradient(135deg,#2ecc71,#27ae60); color:white;">
+
+                <div class="card-body">
+                    <h5>Vehículos</h5>
+                    <h1>{{ total_vehiculos or 0 }}</h1>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow"
+                 style="border:none; border-radius:15px; background:linear-gradient(135deg,#f39c12,#e67e22); color:white;">
+
+                <div class="card-body">
+                    <h5>Órdenes</h5>
+                    <h1>{{ total_ordenes or 0 }}</h1>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow"
+                 style="border:none; border-radius:15px; background:linear-gradient(135deg,#e74c3c,#c0392b); color:white;">
+
+                <div class="card-body">
+                    <h5>Ingresos Totales</h5>
+                    <h2>
+                        Bs {{ ingresos_totales or 0 }}
+                    </h2>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <!-- GRAFICA -->
+    <div class="row mt-4">
+
+        <div class="col-md-8">
+
+            <div class="card shadow"
+                 style="border-radius:15px; border:none;">
+
+                <div class="card-header"
+                     style="background:white; border:none;">
+
+                    <h4 style="font-weight:bold;">
+                        Ingresos del Taller (Bolivianos)
+                    </h4>
+
+                </div>
+
+                <div class="card-body">
+                    <canvas id="ingresosChart"></canvas>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- ORDENES RECIENTES -->
+        <div class="col-md-4">
+
+            <div class="card shadow"
+                 style="border-radius:15px; border:none;">
+
+                <div class="card-header"
+                     style="background:white; border:none;">
+
+                    <h4 style="font-weight:bold;">
+                        Últimas Órdenes
+                    </h4>
+
+                </div>
+
+                <div class="card-body">
+
+                    {% if ordenes %}
+                        <table class="table table-hover">
+
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Vehículo</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+
+                                {% for orden in ordenes %}
+                                <tr>
+                                    <td>#{{ orden.id }}</td>
+                                    <td>{{ orden.vehiculo }}</td>
+                                    <td>
+                                        <strong>
+                                            Bs {{ orden.total or 0 }}
+                                        </strong>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+
+                            </tbody>
+
+                        </table>
+
+                    {% else %}
+                        <p>No existen órdenes registradas.</p>
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+const labels = {{ labels | default([]) | tojson }};
+const valores = {{ valores | default([]) | tojson }};
+
+const ctx = document.getElementById('ingresosChart');
+
+new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: labels,
+        datasets: [{
+            label: 'Ingresos (Bs)',
+            data: valores
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return 'Bs ' + value;
+                    }
+                }
+            }
+        }
+    }
+});
+
+</script>
+
+{% endblock %}

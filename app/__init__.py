@@ -11,7 +11,7 @@ def create_app() -> Flask:
 
     with app.app_context():
 
-        # importar modelos
+        # Importar modelos explícitamente
         from .models import (
             Cliente,
             Vehiculo,
@@ -20,14 +20,22 @@ def create_app() -> Flask:
             DetalleServicio
         )
 
-        # crear tablas
         db.create_all()
 
-        # iniciar AppBuilder
         appbuilder.init_app(app, db.session)
 
-        # importar vistas
+        # Registrar vistas
         from . import views
+        from . import dashboard
+        from .dashboard import DashboardView
+
+        #appbuilder.add_view_no_menu(DashboardView())
+        appbuilder.add_view(
+        DashboardView,
+        "Dashboard",
+        icon="fa-dashboard",
+        category="Inicio"
+        )
 
     return app
 

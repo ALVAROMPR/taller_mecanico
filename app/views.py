@@ -1,6 +1,9 @@
-from .extensions import appbuilder, db
-from flask_appbuilder import ModelView, BaseView, expose
+from flask_appbuilder import ModelView
 from flask_appbuilder.models.sqla.interface import SQLAInterface
+
+# IMPORTANTE
+from .extensions import appbuilder
+#from .dashboard import ReporteIngresosChart
 
 from .models import (
     Cliente,
@@ -12,98 +15,55 @@ from .models import (
 
 
 # ==========================
-# CLIENTES
+# CLIENTE
 # ==========================
-class ClienteModelView(ModelView):
+class ClienteView(ModelView):
     datamodel = SQLAInterface(Cliente)
 
-    label_columns = {
-        "nombre": "Nombre",
-        "apellido": "Apellido",
-        "telefono": "Teléfono",
-        "direccion": "Dirección",
-        "creado_en": "Creado en"
-    }
-
     list_columns = [
-        "nombre",
-        "apellido",
-        "telefono"
-    ]
-
-    add_columns = [
         "nombre",
         "apellido",
         "telefono",
         "direccion"
     ]
 
-    edit_columns = add_columns
-
-    show_columns = [
-        "nombre",
-        "apellido",
-        "telefono",
-        "direccion",
-        "creado_en",
-        "actualizado_en"
-    ]
+    add_columns = list_columns
+    edit_columns = list_columns
+    show_columns = list_columns
 
 
 # ==========================
-# VEHICULOS
+# VEHICULO
 # ==========================
-class VehiculoModelView(ModelView):
+class VehiculoView(ModelView):
     datamodel = SQLAInterface(Vehiculo)
 
-    label_columns = {
-        "placa": "Placa",
-        "marca": "Marca",
-        "modelo": "Modelo",
-        "color": "Color",
-        "cliente": "Cliente"
-    }
-
     list_columns = [
         "placa",
         "marca",
         "modelo",
+        "color",
         "cliente"
     ]
 
     add_columns = [
+        "cliente",
         "placa",
         "marca",
         "modelo",
-        "color",
-        "cliente"
+        "color"
     ]
 
     edit_columns = add_columns
-
-    show_columns = [
-        "placa",
-        "marca",
-        "modelo",
-        "color",
-        "cliente",
-        "creado_en"
-    ]
+    show_columns = list_columns
 
 
 # ==========================
-# SERVICIOS
+# SERVICIO
 # ==========================
-class ServicioModelView(ModelView):
+class ServicioView(ModelView):
     datamodel = SQLAInterface(Servicio)
 
-    label_columns = {
-        "nombre": "Servicio",
-        "descripcion": "Descripción",
-        "precio": "Precio",
-        "estado": "Estado"
-    }
-
     list_columns = [
         "nombre",
         "precio",
@@ -118,31 +78,19 @@ class ServicioModelView(ModelView):
     ]
 
     edit_columns = add_columns
-
-    show_columns = [
-        "nombre",
-        "descripcion",
-        "precio",
-        "estado",
-        "creado_en"
-    ]
+    show_columns = add_columns
 
 
 # ==========================
-# ORDENES DE TRABAJO
+# ORDEN DE TRABAJO
 # ==========================
-class OrdenTrabajoModelView(ModelView):
+class OrdenTrabajoView(ModelView):
     datamodel = SQLAInterface(OrdenTrabajo)
 
-    label_columns = {
-        "vehiculo": "Vehículo",
-        "fecha_ingreso": "Fecha ingreso",
-        "estado": "Estado",
-        "total": "Total",
-        "observacion": "Observación"
-    }
+    label_title = "Ordenes de Trabajo"
 
     list_columns = [
+        "id",
         "vehiculo",
         "fecha_ingreso",
         "estado",
@@ -152,8 +100,8 @@ class OrdenTrabajoModelView(ModelView):
     add_columns = [
         "vehiculo",
         "estado",
-        "total",
-        "observacion"
+        "observacion",
+        "total"
     ]
 
     edit_columns = add_columns
@@ -166,19 +114,16 @@ class OrdenTrabajoModelView(ModelView):
         "observacion"
     ]
 
+    search_columns = ["estado"]
+
+    base_order = ("id", "desc")
+
 
 # ==========================
-# DETALLE SERVICIOS
+# DETALLE SERVICIO
 # ==========================
-class DetalleServicioModelView(ModelView):
+class DetalleServicioView(ModelView):
     datamodel = SQLAInterface(DetalleServicio)
-
-    label_columns = {
-        "orden": "Orden",
-        "servicio": "Servicio",
-        "cantidad": "Cantidad",
-        "subtotal": "Subtotal"
-    }
 
     list_columns = [
         "orden",
@@ -195,92 +140,43 @@ class DetalleServicioModelView(ModelView):
     ]
 
     edit_columns = add_columns
+    show_columns = list_columns
 
 
 # ==========================
-# MENUS
+# REGISTRO DE VISTAS
 # ==========================
-
 appbuilder.add_view(
-    ClienteModelView,
+    ClienteView,
     "Clientes",
     icon="fa-user",
-    category="Gestión"
+    category="Gestion Taller"
 )
 
 appbuilder.add_view(
-    VehiculoModelView,
-    "Vehículos",
+    VehiculoView,
+    "Vehiculos",
     icon="fa-car",
-    category="Gestión"
+    category="Gestion Taller"
 )
 
 appbuilder.add_view(
-    ServicioModelView,
+    ServicioView,
     "Servicios",
     icon="fa-wrench",
-    category="Gestión"
+    category="Gestion Taller"
 )
 
 appbuilder.add_view(
-    OrdenTrabajoModelView,
-    "Órdenes",
-    icon="fa-file-text",
-    category="Operaciones"
+    OrdenTrabajoView,
+    "Ordenes",
+    icon="fa-clipboard",
+    category="Gestion Taller"
 )
 
 appbuilder.add_view(
-    DetalleServicioModelView,
+    DetalleServicioView,
     "Detalle Servicios",
-    icon="fa-list",
-    category="Operaciones"
-)
-# ==========================
-# REPORTES
-# ==========================
-class ReporteView(BaseView):
-    route_base = "/reportes"
-
-    @expose("/")
-    def index(self):
-
-        total_clientes = db.session.query(Cliente).count()
-
-        total_vehiculos = db.session.query(Vehiculo).count()
-
-        total_ordenes = db.session.query(
-            OrdenTrabajo
-        ).count()
-
-        ingresos_totales = db.session.query(
-            db.func.sum(OrdenTrabajo.total)
-        ).scalar() or 0
-
-        servicios_populares = db.session.query(
-            Servicio.nombre,
-            db.func.sum(DetalleServicio.cantidad)
-        ).join(
-            DetalleServicio,
-            Servicio.id == DetalleServicio.servicio_id
-        ).group_by(
-            Servicio.nombre
-        ).all()
-
-        return self.render_template(
-            "reportes.html",
-            total_clientes=total_clientes,
-            total_vehiculos=total_vehiculos,
-            total_ordenes=total_ordenes,
-            ingresos_totales=ingresos_totales,
-            servicios_populares=servicios_populares
-        )
-
-
-appbuilder.add_view_no_menu(ReporteView())
-
-appbuilder.add_link(
-    "Dashboard",
-    href="/reportes/",
-    icon="fa-bar-chart",
-    category="Reportes"
+    icon="fa-cogs",
+    category="Gestion Taller"
 )
