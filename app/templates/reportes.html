@@ -1,80 +1,250 @@
-{% extends 'appbuilder/base.html' %}
+{% extends "appbuilder/base.html" %}
 
 {% block content %}
 
-<div class="container-fluid">
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
-    <h2>Dashboard Taller Mecánico</h2>
-    <hr>
+<style>
+  :root {
+    --az-dark:   #1a2332;
+    --az-blue:   #2563eb;
+    --az-green:  #16a34a;
+    --az-orange: #ea580c;
+    --az-red:    #dc2626;
+    --az-purple: #7c3aed;
+    --az-gray:   #f1f5f9;
+    --card-r:    14px;
+  }
 
-    <div class="row">
+  body { background: var(--az-gray); }
 
-        <div class="col-md-3">
-            <div class="well text-center">
-                <h3>{{ total_clientes }}</h3>
-                <p>Total Clientes</p>
-            </div>
-        </div>
+  .reporte-card {
+    border: none;
+    border-radius: var(--card-r);
+    box-shadow: 0 2px 14px rgba(0,0,0,.08);
+    background: #fff;
+  }
+  .reporte-card .card-header {
+    background: #fff;
+    border-bottom: 1px solid #e2e8f0;
+    border-radius: var(--card-r) var(--card-r) 0 0;
+    padding: .9rem 1.4rem;
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--az-dark);
+  }
 
-        <div class="col-md-3">
-            <div class="well text-center">
-                <h3>{{ total_vehiculos }}</h3>
-                <p>Total Vehículos</p>
-            </div>
-        </div>
+  .stat-box {
+    border-radius: var(--card-r);
+    padding: 1.4rem;
+    text-align: center;
+    color: #fff;
+    box-shadow: 0 3px 12px rgba(0,0,0,.12);
+  }
+  .stat-box .stat-val   { font-size: 2rem; font-weight: 700; line-height: 1.1; }
+  .stat-box .stat-label { font-size: .82rem; opacity: .85; margin-top: 4px; }
 
-        <div class="col-md-3">
-            <div class="well text-center">
-                <h3>{{ total_ordenes }}</h3>
-                <p>Total Órdenes</p>
-            </div>
-        </div>
+  .bg-az-blue   { background: linear-gradient(135deg,#2563eb,#1d4ed8); }
+  .bg-az-green  { background: linear-gradient(135deg,#16a34a,#15803d); }
+  .bg-az-orange { background: linear-gradient(135deg,#ea580c,#c2410c); }
+  .bg-az-red    { background: linear-gradient(135deg,#dc2626,#b91c1c); }
 
-        <div class="col-md-3">
-            <div class="well text-center">
-                <h3>Bs {{ ingresos_totales }}</h3>
-                <p>Ingresos Totales</p>
-            </div>
-        </div>
+  .page-title   { font-weight: 700; color: var(--az-dark); font-size: 1.45rem; }
+  .page-subtitle { color: #64748b; margin: 0; }
 
+  .table thead th { background: #f8fafc; font-weight: 600; font-size: .85rem; }
+  .table td, .table th { vertical-align: middle; }
+</style>
+
+<div class="container-fluid px-4 py-4">
+
+  <!-- ── Encabezado ── -->
+  <div class="row mb-4 align-items-center">
+    <div class="col">
+      <h2 class="page-title">
+        <i class="fa fa-bar-chart me-2" style="color:var(--az-blue)"></i>
+        Reportes del Taller
+      </h2>
+      <p class="page-subtitle">Resumen estadístico de operaciones</p>
+    </div>
+  </div>
+
+  <!-- ── Fila 1: KPIs ── -->
+  <div class="row g-3 mb-4">
+
+    <div class="col-6 col-md-3">
+      <div class="stat-box bg-az-blue">
+        <div class="stat-val">{{ total_clientes or 0 }}</div>
+        <div class="stat-label"><i class="fa fa-users me-1"></i>Clientes</div>
+      </div>
     </div>
 
-    <hr>
+    <div class="col-6 col-md-3">
+      <div class="stat-box bg-az-green">
+        <div class="stat-val">{{ total_vehiculos or 0 }}</div>
+        <div class="stat-label"><i class="fa fa-car me-1"></i>Vehículos</div>
+      </div>
+    </div>
 
-    <h3>Servicios más utilizados</h3>
+    <div class="col-6 col-md-3">
+      <div class="stat-box bg-az-orange">
+        <div class="stat-val">{{ total_ordenes or 0 }}</div>
+        <div class="stat-label"><i class="fa fa-clipboard me-1"></i>Órdenes</div>
+      </div>
+    </div>
 
-    <canvas id="graficaServicios"></canvas>
+    <div class="col-6 col-md-3">
+      <div class="stat-box bg-az-red">
+        <div class="stat-val">Bs {{ "%.0f"|format(ingresos_totales|float) }}</div>
+        <div class="stat-label"><i class="fa fa-money me-1"></i>Ingresos</div>
+      </div>
+    </div>
 
-</div>
+  </div>
 
+  <!-- ── Fila 2: Gráfica servicios + tabla top servicios ── -->
+  <div class="row g-3 mb-4">
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Gráfica servicios más utilizados -->
+    <div class="col-md-7">
+      <div class="card reporte-card h-100">
+        <div class="card-header">
+          <i class="fa fa-wrench me-2" style="color:var(--az-green)"></i>
+          Servicios más Utilizados
+        </div>
+        <div class="card-body">
+          <canvas id="graficaServicios" style="max-height:300px"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabla top servicios -->
+    <div class="col-md-5">
+      <div class="card reporte-card h-100">
+        <div class="card-header">
+          <i class="fa fa-list-ol me-2" style="color:var(--az-orange)"></i>
+          Ranking de Servicios
+        </div>
+        <div class="card-body p-0">
+          {% if servicios_populares %}
+          <table class="table table-hover mb-0">
+            <thead>
+              <tr>
+                <th class="ps-3">#</th>
+                <th>Servicio</th>
+                <th class="pe-3 text-end">Usos</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for s in servicios_populares %}
+              <tr>
+                <td class="ps-3 text-muted">{{ loop.index }}</td>
+                <td>{{ s[0] }}</td>
+                <td class="pe-3 text-end fw-bold">{{ s[1] }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+          <p class="text-muted text-center py-4">Sin datos de servicios.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Fila 3: Últimas órdenes ── -->
+  <div class="row g-3">
+    <div class="col-12">
+      <div class="card reporte-card">
+        <div class="card-header">
+          <i class="fa fa-table me-2" style="color:var(--az-purple)"></i>
+          Historial de Órdenes Recientes
+        </div>
+        <div class="card-body p-0">
+          {% if ordenes %}
+          <table class="table table-hover mb-0">
+            <thead>
+              <tr>
+                <th class="ps-3">N°</th>
+                <th>Vehículo</th>
+                <th>Ingreso</th>
+                <th>Estado</th>
+                <th class="pe-3 text-end">Total (Bs)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for orden in ordenes %}
+              <tr>
+                <td class="ps-3 text-muted">#{{ orden.id }}</td>
+                <td>{{ orden.vehiculo }}</td>
+                <td>{{ orden.fecha_ingreso.strftime("%d/%m/%Y") if orden.fecha_ingreso else "—" }}</td>
+                <td>
+                  {% if orden.estado == "Pendiente" %}
+                    <span class="badge bg-warning text-dark">Pendiente</span>
+                  {% elif orden.estado == "En Proceso" %}
+                    <span class="badge bg-primary">En Proceso</span>
+                  {% elif orden.estado == "Finalizado" %}
+                    <span class="badge bg-success">Finalizado</span>
+                  {% else %}
+                    <span class="badge bg-secondary">Entregado</span>
+                  {% endif %}
+                </td>
+                <td class="pe-3 text-end fw-bold">{{ orden.total or 0 }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+          <p class="text-muted text-center py-4">Sin órdenes registradas.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
 
 <script>
-    const ctx = document.getElementById('graficaServicios');
+// ── Datos desde servidor ──────────────────────────────────────────
+const labelsServ  = [
+  {% for s in servicios_populares %}"{{ s[0] }}",{% endfor %}
+];
+const valoresServ = [
+  {% for s in servicios_populares %}{{ s[1] }},{% endfor %}
+];
 
-    const labels = [
-        {% for servicio in servicios_populares %}
-            "{{ servicio[0] }}",
-        {% endfor %}
-    ];
-
-    const data = [
-        {% for servicio in servicios_populares %}
-            {{ servicio[1] }},
-        {% endfor %}
-    ];
-
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Cantidad de Servicios',
-                data: data
-            }]
-        }
-    });
+// ── Gráfica: servicios más utilizados ────────────────────────────
+if (labelsServ.length > 0) {
+  new Chart(document.getElementById("graficaServicios"), {
+    type: "bar",
+    data: {
+      labels: labelsServ,
+      datasets: [{
+        label: "Veces solicitado",
+        data: valoresServ,
+        backgroundColor: "#16a34acc",
+        borderColor: "#16a34a",
+        borderWidth: 1,
+        borderRadius: 6,
+      }]
+    },
+    options: {
+      indexAxis: "y",
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { beginAtZero: true, ticks: { stepSize: 1 } }
+      }
+    }
+  });
+} else {
+  document.getElementById("graficaServicios").parentElement.innerHTML =
+    '<p class="text-muted text-center py-5">Sin datos para graficar.</p>';
+}
 </script>
 
 {% endblock %}

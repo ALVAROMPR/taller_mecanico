@@ -2,194 +2,385 @@
 
 {% block content %}
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
-<div class="container-fluid" style="padding: 20px; background: #f4f6f9; min-height: 100vh;">
+<style>
+  /* ── Variables de color automotriz ── */
+  :root {
+    --az-dark:   #1a2332;
+    --az-blue:   #2563eb;
+    --az-green:  #16a34a;
+    --az-orange: #ea580c;
+    --az-red:    #dc2626;
+    --az-purple: #7c3aed;
+    --az-gray:   #f1f5f9;
+    --card-r:    14px;
+  }
 
-    <!-- TITULO -->
-    <div class="row mb-4">
-        <div class="col-md-12">
-            <h2 style="font-weight: bold; color: #2c3e50;">
-                Panel Administrativo - Taller Mecánico
-            </h2>
-            <p style="color: #7f8c8d;">
-                Resumen general del negocio
-            </p>
+  body { background: var(--az-gray); }
+
+  .kpi-card {
+    border: none;
+    border-radius: var(--card-r);
+    color: #fff;
+    box-shadow: 0 4px 18px rgba(0,0,0,.13);
+    transition: transform .2s;
+  }
+  .kpi-card:hover { transform: translateY(-4px); }
+
+  .kpi-card .card-body { padding: 1.4rem 1.6rem; }
+  .kpi-card .kpi-icon  { font-size: 2.4rem; opacity: .35; }
+  .kpi-card .kpi-value { font-size: 2rem; font-weight: 700; line-height: 1; }
+  .kpi-card .kpi-label { font-size: .85rem; opacity: .85; margin-top: 4px; }
+
+  .bg-az-blue   { background: linear-gradient(135deg,#2563eb,#1d4ed8); }
+  .bg-az-green  { background: linear-gradient(135deg,#16a34a,#15803d); }
+  .bg-az-orange { background: linear-gradient(135deg,#ea580c,#c2410c); }
+  .bg-az-red    { background: linear-gradient(135deg,#dc2626,#b91c1c); }
+  .bg-az-purple { background: linear-gradient(135deg,#7c3aed,#6d28d9); }
+  .bg-az-teal   { background: linear-gradient(135deg,#0891b2,#0e7490); }
+  .bg-az-rose   { background: linear-gradient(135deg,#e11d48,#be123c); }
+
+  .chart-card {
+    border: none;
+    border-radius: var(--card-r);
+    box-shadow: 0 2px 12px rgba(0,0,0,.07);
+    background: #fff;
+  }
+  .chart-card .card-header {
+    background: #fff;
+    border-bottom: 1px solid #e2e8f0;
+    border-radius: var(--card-r) var(--card-r) 0 0;
+    padding: .9rem 1.4rem;
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--az-dark);
+  }
+
+  .badge-estado {
+    font-size: .75rem;
+    padding: .3em .7em;
+    border-radius: 999px;
+    font-weight: 600;
+  }
+  .badge-pendiente  { background:#fef3c7; color:#92400e; }
+  .badge-en-proceso { background:#dbeafe; color:#1e40af; }
+  .badge-finalizado { background:#dcfce7; color:#166534; }
+  .badge-entregado  { background:#f3e8ff; color:#6b21a8; }
+
+  .page-header h2 { font-weight: 700; color: var(--az-dark); font-size: 1.5rem; }
+  .page-header p  { color: #64748b; margin: 0; }
+</style>
+
+<div class="container-fluid px-4 py-4">
+
+  <!-- ── Encabezado ── -->
+  <div class="row mb-4 page-header align-items-center">
+    <div class="col">
+      <h2><i class="fa fa-tachometer me-2" style="color:var(--az-blue)"></i>Panel Administrativo</h2>
+      <p>Taller Mecánico — resumen en tiempo real</p>
+    </div>
+    <div class="col-auto text-muted small">
+      <i class="fa fa-clock-o me-1"></i>
+      {{ self.current_user if self.current_user else "" }}
+    </div>
+  </div>
+
+  <!-- ── Fila 1: KPIs principales ── -->
+  <div class="row g-3 mb-4">
+
+    <div class="col-6 col-md-3">
+      <div class="card kpi-card bg-az-blue">
+        <div class="card-body d-flex justify-content-between align-items-center">
+          <div>
+            <div class="kpi-value">{{ total_clientes }}</div>
+            <div class="kpi-label">Clientes</div>
+          </div>
+          <i class="fa fa-users kpi-icon"></i>
         </div>
+      </div>
     </div>
 
-    <!-- TARJETAS -->
-    <div class="row">
-
-        <div class="col-md-3">
-            <div class="card shadow"
-                 style="border:none; border-radius:15px; background:linear-gradient(135deg,#3498db,#2980b9); color:white;">
-
-                <div class="card-body">
-                    <h5>Total Clientes</h5>
-                    <h1>{{ total_clientes or 0 }}</h1>
-                </div>
-
-            </div>
+    <div class="col-6 col-md-3">
+      <div class="card kpi-card bg-az-green">
+        <div class="card-body d-flex justify-content-between align-items-center">
+          <div>
+            <div class="kpi-value">{{ total_vehiculos }}</div>
+            <div class="kpi-label">Vehículos</div>
+          </div>
+          <i class="fa fa-car kpi-icon"></i>
         </div>
-
-        <div class="col-md-3">
-            <div class="card shadow"
-                 style="border:none; border-radius:15px; background:linear-gradient(135deg,#2ecc71,#27ae60); color:white;">
-
-                <div class="card-body">
-                    <h5>Vehículos</h5>
-                    <h1>{{ total_vehiculos or 0 }}</h1>
-                </div>
-
-            </div>
-        </div>
-
-        <div class="col-md-3">
-            <div class="card shadow"
-                 style="border:none; border-radius:15px; background:linear-gradient(135deg,#f39c12,#e67e22); color:white;">
-
-                <div class="card-body">
-                    <h5>Órdenes</h5>
-                    <h1>{{ total_ordenes or 0 }}</h1>
-                </div>
-
-            </div>
-        </div>
-
-        <div class="col-md-3">
-            <div class="card shadow"
-                 style="border:none; border-radius:15px; background:linear-gradient(135deg,#e74c3c,#c0392b); color:white;">
-
-                <div class="card-body">
-                    <h5>Ingresos Totales</h5>
-                    <h2>
-                        Bs {{ ingresos_totales or 0 }}
-                    </h2>
-                </div>
-
-            </div>
-        </div>
-
+      </div>
     </div>
 
-    <!-- GRAFICA -->
-    <div class="row mt-4">
-
-        <div class="col-md-8">
-
-            <div class="card shadow"
-                 style="border-radius:15px; border:none;">
-
-                <div class="card-header"
-                     style="background:white; border:none;">
-
-                    <h4 style="font-weight:bold;">
-                        Ingresos del Taller (Bolivianos)
-                    </h4>
-
-                </div>
-
-                <div class="card-body">
-                    <canvas id="ingresosChart"></canvas>
-                </div>
-
-            </div>
-
+    <div class="col-6 col-md-3">
+      <div class="card kpi-card bg-az-orange">
+        <div class="card-body d-flex justify-content-between align-items-center">
+          <div>
+            <div class="kpi-value">{{ total_ordenes }}</div>
+            <div class="kpi-label">Órdenes totales</div>
+          </div>
+          <i class="fa fa-clipboard kpi-icon"></i>
         </div>
-
-        <!-- ORDENES RECIENTES -->
-        <div class="col-md-4">
-
-            <div class="card shadow"
-                 style="border-radius:15px; border:none;">
-
-                <div class="card-header"
-                     style="background:white; border:none;">
-
-                    <h4 style="font-weight:bold;">
-                        Últimas Órdenes
-                    </h4>
-
-                </div>
-
-                <div class="card-body">
-
-                    {% if ordenes %}
-                        <table class="table table-hover">
-
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Vehículo</th>
-                                    <th>Total</th>
-                                </tr>
-                            </thead>
-
-                            <tbody>
-
-                                {% for orden in ordenes %}
-                                <tr>
-                                    <td>#{{ orden.id }}</td>
-                                    <td>{{ orden.vehiculo }}</td>
-                                    <td>
-                                        <strong>
-                                            Bs {{ orden.total or 0 }}
-                                        </strong>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-
-                            </tbody>
-
-                        </table>
-
-                    {% else %}
-                        <p>No existen órdenes registradas.</p>
-                    {% endif %}
-
-                </div>
-
-            </div>
-
-        </div>
-
+      </div>
     </div>
 
-</div>
+    <div class="col-6 col-md-3">
+      <div class="card kpi-card bg-az-red">
+        <div class="card-body d-flex justify-content-between align-items-center">
+          <div>
+            <div class="kpi-value">Bs {{ "%.0f"|format(ingresos_totales) }}</div>
+            <div class="kpi-label">Ingresos totales</div>
+          </div>
+          <i class="fa fa-money kpi-icon"></i>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Fila 2: KPIs de estado + servicios activos ── -->
+  <div class="row g-3 mb-4">
+
+    <div class="col-6 col-md">
+      <div class="card kpi-card bg-az-teal">
+        <div class="card-body">
+          <div class="kpi-value">{{ ordenes_pendientes }}</div>
+          <div class="kpi-label">Pendientes</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-6 col-md">
+      <div class="card kpi-card bg-az-blue">
+        <div class="card-body">
+          <div class="kpi-value">{{ ordenes_en_proceso }}</div>
+          <div class="kpi-label">En proceso</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-6 col-md">
+      <div class="card kpi-card bg-az-green">
+        <div class="card-body">
+          <div class="kpi-value">{{ ordenes_finalizadas }}</div>
+          <div class="kpi-label">Finalizadas</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-6 col-md">
+      <div class="card kpi-card bg-az-purple">
+        <div class="card-body">
+          <div class="kpi-value">{{ ordenes_entregadas }}</div>
+          <div class="kpi-label">Entregadas</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-6 col-md">
+      <div class="card kpi-card bg-az-rose">
+        <div class="card-body">
+          <div class="kpi-value">{{ servicios_activos }}</div>
+          <div class="kpi-label">Servicios activos</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Fila 3: Gráfica ingresos + dona estados ── -->
+  <div class="row g-3 mb-4">
+
+    <!-- Gráfica ingresos -->
+    <div class="col-md-8">
+      <div class="card chart-card h-100">
+        <div class="card-header">
+          <i class="fa fa-bar-chart me-2" style="color:var(--az-blue)"></i>
+          Ingresos por Orden de Trabajo (Bs)
+        </div>
+        <div class="card-body">
+          <canvas id="chartIngresos" style="max-height:280px"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dona estados -->
+    <div class="col-md-4">
+      <div class="card chart-card h-100">
+        <div class="card-header">
+          <i class="fa fa-pie-chart me-2" style="color:var(--az-orange)"></i>
+          Órdenes por Estado
+        </div>
+        <div class="card-body d-flex align-items-center justify-content-center">
+          <canvas id="chartEstados" style="max-height:260px"></canvas>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Fila 4: Servicios populares + órdenes recientes ── -->
+  <div class="row g-3">
+
+    <!-- Servicios más solicitados -->
+    <div class="col-md-6">
+      <div class="card chart-card h-100">
+        <div class="card-header">
+          <i class="fa fa-wrench me-2" style="color:var(--az-green)"></i>
+          Servicios más Solicitados
+        </div>
+        <div class="card-body">
+          <canvas id="chartServicios" style="max-height:260px"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Últimas órdenes -->
+    <div class="col-md-6">
+      <div class="card chart-card h-100">
+        <div class="card-header">
+          <i class="fa fa-list-alt me-2" style="color:var(--az-purple)"></i>
+          Últimas Órdenes Registradas
+        </div>
+        <div class="card-body p-0">
+          {% if ordenes %}
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="ps-3">N°</th>
+                <th>Vehículo</th>
+                <th>Estado</th>
+                <th class="pe-3">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for orden in ordenes %}
+              <tr>
+                <td class="ps-3 text-muted">#{{ orden.id }}</td>
+                <td>{{ orden.vehiculo }}</td>
+                <td>
+                  {% if orden.estado == "Pendiente" %}
+                    <span class="badge-estado badge-pendiente">Pendiente</span>
+                  {% elif orden.estado == "En Proceso" %}
+                    <span class="badge-estado badge-en-proceso">En Proceso</span>
+                  {% elif orden.estado == "Finalizado" %}
+                    <span class="badge-estado badge-finalizado">Finalizado</span>
+                  {% else %}
+                    <span class="badge-estado badge-entregado">Entregado</span>
+                  {% endif %}
+                </td>
+                <td class="pe-3 fw-bold">Bs {{ orden.total or 0 }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+          <p class="text-muted text-center py-4">Sin órdenes registradas.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div><!-- /container -->
 
 
 <script>
+// ── Datos desde el servidor ──────────────────────────────────────
+const labelsIngresos  = {{ labels          | tojson }};
+const valoresIngresos = {{ valores         | tojson }};
+const labelsServ      = {{ labels_servicios  | tojson }};
+const valoresServ     = {{ valores_servicios | tojson }};
+const labelsEst       = {{ estados_labels    | tojson }};
+const valoresEst      = {{ estados_valores   | tojson }};
 
-const labels = {{ labels | default([]) | tojson }};
-const valores = {{ valores | default([]) | tojson }};
+const COLORES = {
+  azul:   "#2563eb",
+  verde:  "#16a34a",
+  naranja:"#ea580c",
+  rojo:   "#dc2626",
+  morado: "#7c3aed",
+  teal:   "#0891b2",
+};
 
-const ctx = document.getElementById('ingresosChart');
-
-new Chart(ctx, {
-    type: 'bar',
-    data: {
-        labels: labels,
-        datasets: [{
-            label: 'Ingresos (Bs)',
-            data: valores
-        }]
-    },
-    options: {
-        responsive: true,
-        scales: {
-            y: {
-                beginAtZero: true,
-                ticks: {
-                    callback: function(value) {
-                        return 'Bs ' + value;
-                    }
-                }
-            }
-        }
+// ── Gráfica 1: Ingresos por OT ───────────────────────────────────
+new Chart(document.getElementById("chartIngresos"), {
+  type: "bar",
+  data: {
+    labels: labelsIngresos,
+    datasets: [{
+      label: "Bs",
+      data: valoresIngresos,
+      backgroundColor: COLORES.azul + "cc",
+      borderColor: COLORES.azul,
+      borderWidth: 1,
+      borderRadius: 6,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: { callback: v => "Bs " + v.toLocaleString() }
+      }
     }
+  }
 });
 
+// ── Gráfica 2: Estados (dona) ─────────────────────────────────────
+new Chart(document.getElementById("chartEstados"), {
+  type: "doughnut",
+  data: {
+    labels: labelsEst,
+    datasets: [{
+      data: valoresEst,
+      backgroundColor: [
+        COLORES.teal,
+        COLORES.azul,
+        COLORES.verde,
+        COLORES.morado,
+      ],
+      borderWidth: 2,
+      borderColor: "#fff",
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { position: "bottom", labels: { font: { size: 12 } } }
+    },
+    cutout: "60%",
+  }
+});
+
+// ── Gráfica 3: Servicios populares ───────────────────────────────
+new Chart(document.getElementById("chartServicios"), {
+  type: "bar",
+  data: {
+    labels: labelsServ,
+    datasets: [{
+      label: "Veces solicitado",
+      data: valoresServ,
+      backgroundColor: COLORES.verde + "cc",
+      borderColor: COLORES.verde,
+      borderWidth: 1,
+      borderRadius: 6,
+    }]
+  },
+  options: {
+    indexAxis: "y",          // barras horizontales
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { beginAtZero: true, ticks: { stepSize: 1 } }
+    }
+  }
+});
 </script>
 
 {% endblock %}

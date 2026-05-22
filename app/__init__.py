@@ -1,40 +1,41 @@
 from flask import Flask
-
-from .extensions import appbuilder, db
+from .extensions import appbuilder, db, migrate
 
 
 def create_app() -> Flask:
     app = Flask(__name__)
     app.config.from_object("config")
 
+    # Inicializar extensiones
     db.init_app(app)
+    migrate.init_app(app, db)          # Flask-Migrate
 
     with app.app_context():
 
-        # Importar modelos explícitamente
-        from .models import (
+        # Importar modelos — necesario para que SQLAlchemy los registre
+        from .models import (           # noqa: F401
             Cliente,
             Vehiculo,
             Servicio,
             OrdenTrabajo,
-            DetalleServicio
+            DetalleServicio,
         )
 
         db.create_all()
 
         appbuilder.init_app(app, db.session)
 
-        # Registrar vistas
-        from . import views
-        from . import dashboard
-        from .dashboard import DashboardView
+        # Registrar vistas (incluye add_view al menú)
+        from . import views             # noqa: F401
 
-        #appbuilder.add_view_no_menu(DashboardView())
+        # Registrar dashboard
+        from .dashboard import DashboardView
         appbuilder.add_view(
-        DashboardView,
-        "Dashboard",
-        icon="fa-dashboard",
-        category="Inicio"
+            DashboardView,
+            "Dashboard",
+            icon="fa-tachometer",
+            category="Inicio",
+            category_icon="fa-home",
         )
 
     return app
