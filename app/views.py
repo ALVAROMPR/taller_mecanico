@@ -167,7 +167,6 @@ class OrdenTrabajoView(ModelView):
         """Convierte date → datetime(date, 00:00:00) si el campo tiene valor."""
         val = item.fecha_salida
         if val is not None and not isinstance(val, datetime):
-            # val es un objeto date — lo elevamos a datetime
             item.fecha_salida = datetime.combine(val, time.min)
 
     def pre_add(self, item):
@@ -175,6 +174,9 @@ class OrdenTrabajoView(ModelView):
 
     def pre_update(self, item):
         self._convertir_fecha_salida(item)
+        # Auto fecha_salida: si el estado llega a Entregado y no hay fecha, poner hoy
+        if item.estado == "Entregado" and item.fecha_salida is None:
+            item.fecha_salida = datetime.now()
 
 
 # ══════════════════════════════════════════════
@@ -211,6 +213,27 @@ class DetalleServicioView(ModelView):
         "precio_unitario":  "Precio Unitario (Bs)",
         "subtotal":         "Subtotal (Bs)",
     }
+
+    def _recalcular_orden(self, item):
+        """
+        Recarga los detalles de la orden desde la DB y actualiza total.
+        Se llama desde post_add / post_update / post_delete, cuando
+        FAB ya hizo commit y la sesión está limpia.
+        """
+        from .extensions import db
+        orden = db.session.get(OrdenTrabajo, item.orden_id)
+        if orden:
+            orden.recalcular_total()
+            db.session.commit()
+
+    def post_add(self, item):
+        self._recalcular_orden(item)
+
+    def post_update(self, item):
+        self._recalcular_orden(item)
+
+    def post_delete(self, item):
+        self._recalcular_orden(item)
 
 
 # ══════════════════════════════════════════════

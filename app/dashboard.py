@@ -51,6 +51,7 @@ class DashboardView(BaseView):
         # ──────────────────────────────────────
         ordenes_chart = (
             db.session.query(OrdenTrabajo.id, OrdenTrabajo.total)
+            .filter(OrdenTrabajo.total > 0)
             .order_by(OrdenTrabajo.id.asc())
             .limit(20)
             .all()

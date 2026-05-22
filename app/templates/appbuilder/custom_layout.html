@@ -1,0 +1,560 @@
+{% extends 'appbuilder/baselayout.html' %}
+
+{% block navbar %}
+{# ═══════════════════════════════════════════════════════
+   SIDEBAR IZQUIERDO — Taller Mecánico
+   Reemplaza completamente el navbar horizontal de FAB.
+   El menú original de FAB se ignora; los links están
+   hardcodeados aquí para control total del diseño.
+   ═══════════════════════════════════════════════════════ #}
+
+<style>
+  /* ── Reset de estilos de FAB que chocan con sidebar ── */
+  .navbar { display: none !important; }
+
+  body {
+    margin: 0;
+    padding: 0;
+    background: #f0f2f5;
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* ── Sidebar ── */
+  #sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 240px;
+    height: 100vh;
+    background: #1a2332;
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+    transition: width .25s ease;
+    overflow: hidden;
+  }
+
+  #sidebar.collapsed { width: 64px; }
+
+  /* Logo / marca */
+  .sb-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 20px 16px 18px;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+    text-decoration: none;
+    min-height: 64px;
+  }
+  .sb-brand .sb-icon {
+    width: 34px;
+    height: 34px;
+    background: #2563eb;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 18px;
+    color: #fff;
+  }
+  .sb-brand .sb-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .sb-brand .sb-subtitle {
+    font-size: 10px;
+    color: rgba(255,255,255,.45);
+    white-space: nowrap;
+  }
+  #sidebar.collapsed .sb-title,
+  #sidebar.collapsed .sb-subtitle { display: none; }
+
+  /* Navegación */
+  .sb-nav {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 12px 0;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,.1) transparent;
+  }
+
+  /* Etiqueta de sección */
+  .sb-section {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    color: rgba(255,255,255,.3);
+    padding: 16px 20px 6px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  #sidebar.collapsed .sb-section { opacity: 0; }
+
+  /* Item de menú */
+  .sb-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    margin: 2px 8px;
+    border-radius: 8px;
+    color: rgba(255,255,255,.65);
+    text-decoration: none;
+    font-size: 13.5px;
+    font-weight: 500;
+    transition: background .15s, color .15s;
+    white-space: nowrap;
+    overflow: hidden;
+    cursor: pointer;
+  }
+  .sb-item:hover {
+    background: rgba(255,255,255,.08);
+    color: #fff;
+    text-decoration: none;
+  }
+  .sb-item.active {
+    background: #2563eb;
+    color: #fff;
+  }
+  .sb-item .sb-item-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+    width: 20px;
+    text-align: center;
+  }
+  .sb-item .sb-item-label { overflow: hidden; }
+  #sidebar.collapsed .sb-item-label { display: none; }
+  #sidebar.collapsed .sb-item { justify-content: center; padding: 10px; }
+
+  /* Submenú (acordeón) */
+  .sb-group { overflow: hidden; }
+  .sb-group-toggle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    margin: 2px 8px;
+    border-radius: 8px;
+    color: rgba(255,255,255,.65);
+    font-size: 13.5px;
+    font-weight: 500;
+    cursor: pointer;
+    user-select: none;
+    transition: background .15s, color .15s;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .sb-group-toggle:hover { background: rgba(255,255,255,.08); color: #fff; }
+  .sb-group-toggle .sb-item-icon { font-size: 18px; flex-shrink: 0; width: 20px; text-align: center; }
+  .sb-group-toggle .sb-item-label { flex: 1; overflow: hidden; }
+  .sb-caret {
+    font-size: 12px;
+    transition: transform .2s;
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+  .sb-group.open .sb-caret { transform: rotate(90deg); }
+  #sidebar.collapsed .sb-group-toggle { justify-content: center; padding: 10px; }
+  #sidebar.collapsed .sb-item-label,
+  #sidebar.collapsed .sb-caret { display: none; }
+
+  .sb-children {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height .25s ease;
+  }
+  .sb-group.open .sb-children { max-height: 400px; }
+  #sidebar.collapsed .sb-children { display: none; }
+
+  .sb-child {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 16px 8px 48px;
+    color: rgba(255,255,255,.55);
+    text-decoration: none;
+    font-size: 13px;
+    transition: color .15s, background .15s;
+    border-radius: 6px;
+    margin: 1px 8px;
+  }
+  .sb-child:hover { color: #fff; background: rgba(255,255,255,.06); text-decoration: none; }
+  .sb-child.active { color: #60a5fa; }
+  .sb-child .sb-child-dot {
+    width: 5px; height: 5px;
+    background: currentColor;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* Perfil / usuario en footer del sidebar */
+  .sb-footer {
+    border-top: 1px solid rgba(255,255,255,.08);
+    padding: 12px 10px;
+  }
+  .sb-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background .15s;
+    text-decoration: none;
+  }
+  .sb-user:hover { background: rgba(255,255,255,.08); }
+  .sb-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+  }
+  .sb-user-info { overflow: hidden; }
+  .sb-user-name { font-size: 13px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sb-user-role { font-size: 11px; color: rgba(255,255,255,.4); white-space: nowrap; }
+  #sidebar.collapsed .sb-user-info { display: none; }
+  #sidebar.collapsed .sb-user { justify-content: center; }
+
+  /* Toggle collapse */
+  .sb-toggle-btn {
+    position: fixed;
+    top: 14px;
+    left: 204px;
+    width: 28px;
+    height: 28px;
+    background: #2563eb;
+    border: none;
+    border-radius: 50%;
+    color: #fff;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 1100;
+    transition: left .25s ease;
+    box-shadow: 0 2px 8px rgba(37,99,235,.4);
+  }
+  #sidebar.collapsed ~ .sb-toggle-btn,
+  body.sb-collapsed .sb-toggle-btn { left: 28px; }
+
+  /* Topbar (encabezado de página) */
+  #topbar {
+    position: fixed;
+    top: 0;
+    left: 240px;
+    right: 0;
+    height: 56px;
+    background: #fff;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    z-index: 900;
+    transition: left .25s ease;
+  }
+  body.sb-collapsed #topbar { left: 64px; }
+
+  .topbar-left { display: flex; align-items: center; gap: 12px; }
+  .topbar-title { font-size: 15px; font-weight: 600; color: #1a2332; }
+  .topbar-breadcrumb { font-size: 12px; color: #94a3b8; }
+
+  .topbar-right { display: flex; align-items: center; gap: 8px; }
+  .topbar-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background .15s, color .15s;
+  }
+  .topbar-btn:hover { background: #f1f5f9; color: #1a2332; text-decoration: none; }
+
+  /* Contenido principal */
+  #main-content {
+    margin-left: 240px;
+    margin-top: 56px;
+    min-height: calc(100vh - 56px);
+    transition: margin-left .25s ease;
+    padding: 0;
+  }
+  body.sb-collapsed #main-content { margin-left: 64px; }
+
+  /* Flash messages dentro del layout */
+  #flash-zone {
+    padding: 12px 24px 0;
+  }
+
+  /* Responsive — móvil */
+  @media (max-width: 768px) {
+    #sidebar { transform: translateX(-100%); width: 240px !important; }
+    #sidebar.mobile-open { transform: translateX(0); }
+    #topbar { left: 0 !important; }
+    #main-content { margin-left: 0 !important; }
+    .sb-toggle-btn { left: 12px !important; }
+    #sb-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.4);
+      z-index: 999;
+    }
+    #sb-overlay.visible { display: block; }
+  }
+</style>
+
+{# ── Overlay móvil ── #}
+<div id="sb-overlay" onclick="closeMobileSidebar()"></div>
+
+{# ── Sidebar ── #}
+<nav id="sidebar" role="navigation" aria-label="Menú principal">
+
+  {# Marca #}
+  <a class="sb-brand" href="{{ appbuilder.get_url_for_index }}">
+    <div class="sb-icon"><i class="fa fa-wrench"></i></div>
+    <div>
+      <div class="sb-title">Taller Mecánico</div>
+      <div class="sb-subtitle">Sistema de Gestión</div>
+    </div>
+  </a>
+
+  {# Navegación #}
+  <div class="sb-nav">
+
+    {# ── Inicio ── #}
+    <div class="sb-section">Inicio</div>
+
+    <a class="sb-item {% if request.path == '/dashboard/' or request.path == '/dashboard' %}active{% endif %}"
+       href="/dashboard/">
+      <i class="fa fa-tachometer sb-item-icon"></i>
+      <span class="sb-item-label">Dashboard</span>
+    </a>
+
+    {# ── Gestión Taller ── #}
+    <div class="sb-section">Gestión</div>
+
+    <a class="sb-item {% if 'clienteview' in request.path %}active{% endif %}"
+       href="/clienteview/list">
+      <i class="fa fa-users sb-item-icon"></i>
+      <span class="sb-item-label">Clientes</span>
+    </a>
+
+    <a class="sb-item {% if 'vehiculoview' in request.path %}active{% endif %}"
+       href="/vehiculoview/list/">
+      <i class="fa fa-car sb-item-icon"></i>
+      <span class="sb-item-label">Vehículos</span>
+    </a>
+
+    {# Órdenes — grupo con submenú #}
+    <div class="sb-group {% if 'ordentrabajo' in request.path or 'detalleservicio' in request.path %}open{% endif %}"
+         id="grp-ordenes">
+      <div class="sb-group-toggle" onclick="toggleGroup('grp-ordenes')">
+        <i class="fa fa-clipboard sb-item-icon"></i>
+        <span class="sb-item-label">Órdenes</span>
+        <i class="fa fa-chevron-right sb-caret"></i>
+      </div>
+      <div class="sb-children">
+        <a class="sb-child {% if 'ordentrabajoview' in request.path %}active{% endif %}"
+           href="/ordentrabajoview/list/">
+          <span class="sb-child-dot"></span>
+          Órdenes de Trabajo
+        </a>
+        <a class="sb-child {% if 'detalleservicioview' in request.path %}active{% endif %}"
+           href="/detalleservicioview/list/">
+          <span class="sb-child-dot"></span>
+          Detalle de Servicios
+        </a>
+      </div>
+    </div>
+
+    <a class="sb-item {% if 'servicioview' in request.path %}active{% endif %}"
+       href="/servicioview/list/">
+      <i class="fa fa-wrench sb-item-icon"></i>
+      <span class="sb-item-label">Servicios</span>
+    </a>
+
+    {# ── Reportes ── #}
+    <div class="sb-section">Reportes</div>
+
+    <a class="sb-item {% if 'reportes' in request.path %}active{% endif %}"
+       href="/reportes/list">
+      <i class="fa fa-bar-chart sb-item-icon"></i>
+      <span class="sb-item-label">Reportes</span>
+    </a>
+
+    {# ── Admin ── #}
+    {% if current_user.is_authenticated %}
+    <div class="sb-section">Administración</div>
+
+    <div class="sb-group {% if 'roles' in request.path or 'userdbmodelview' in request.path %}open{% endif %}"
+         id="grp-admin">
+      <div class="sb-group-toggle" onclick="toggleGroup('grp-admin')">
+        <i class="fa fa-shield sb-item-icon"></i>
+        <span class="sb-item-label">Seguridad</span>
+        <i class="fa fa-chevron-right sb-caret"></i>
+      </div>
+      <div class="sb-children">
+        <a class="sb-child" href="/users/list/">
+          <span class="sb-child-dot"></span>Usuarios
+        </a>
+        <a class="sb-child" href="/roles/list/">
+          <span class="sb-child-dot"></span>Roles
+        </a>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>{# /sb-nav #}
+
+  {# Footer usuario #}
+  <div class="sb-footer">
+    {% if current_user.is_authenticated %}
+    <a class="sb-user" href="/userinfoeditview/form">
+      <div class="sb-avatar">
+        {{ current_user.first_name[0] | upper if current_user.first_name else 'U' }}
+      </div>
+      <div class="sb-user-info">
+        <div class="sb-user-name">{{ current_user.first_name }} {{ current_user.last_name }}</div>
+        <div class="sb-user-role">{{ current_user.roles[0].name if current_user.roles else 'Usuario' }}</div>
+      </div>
+    </a>
+    <a class="sb-item" href="{{ appbuilder.get_url_for_logout }}" style="margin-top:4px; color:rgba(255,100,100,.7);">
+      <i class="fa fa-sign-out sb-item-icon"></i>
+      <span class="sb-item-label">Cerrar sesión</span>
+    </a>
+    {% endif %}
+  </div>
+
+</nav>{# /sidebar #}
+
+{# ── Botón colapsar ── #}
+<button class="sb-toggle-btn" onclick="toggleSidebar()" aria-label="Colapsar menú" title="Colapsar menú">
+  <i class="fa fa-bars"></i>
+</button>
+
+{# ── Topbar ── #}
+<div id="topbar">
+  <div class="topbar-left">
+    <span class="topbar-title">
+      {% block page_title %}{{ appbuilder.app_name }}{% endblock %}
+    </span>
+  </div>
+  <div class="topbar-right">
+    <a class="topbar-btn" href="/dashboard/" title="Dashboard">
+      <i class="fa fa-tachometer"></i>
+    </a>
+    <a class="topbar-btn" href="/ordentrabajoview/add/" title="Nueva orden">
+      <i class="fa fa-plus"></i>
+    </a>
+    {% if current_user.is_authenticated %}
+    <a class="topbar-btn" href="{{ appbuilder.get_url_for_logout }}" title="Cerrar sesión">
+      <i class="fa fa-sign-out"></i>
+    </a>
+    {% endif %}
+  </div>
+</div>
+
+{# ── Contenedor principal ── #}
+<div id="main-content">
+
+  {# Flash messages #}
+  <div id="flash-zone">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ 'success' if category == 'success' else 'danger' if category == 'danger' else 'info' }} alert-dismissible fade show"
+               role="alert" style="border-radius:10px; font-size:13.5px;">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+  </div>
+
+{% endblock %}{# /navbar block — FAB cierra el layout después de este bloque #}
+
+{# ── Scripts del sidebar ── #}
+{% block tail_js %}
+{{ super() }}
+<script>
+(function () {
+  var SB_KEY = 'sb_collapsed';
+
+  function getSidebar()   { return document.getElementById('sidebar'); }
+  function getToggleBtn() { return document.querySelector('.sb-toggle-btn'); }
+
+  function applyState(collapsed) {
+    var sb = getSidebar();
+    if (!sb) return;
+    if (collapsed) {
+      sb.classList.add('collapsed');
+      document.body.classList.add('sb-collapsed');
+    } else {
+      sb.classList.remove('collapsed');
+      document.body.classList.remove('sb-collapsed');
+    }
+  }
+
+  window.toggleSidebar = function () {
+    var collapsed = !document.getElementById('sidebar').classList.contains('collapsed');
+    applyState(collapsed);
+    try { localStorage.setItem(SB_KEY, collapsed ? '1' : '0'); } catch(e) {}
+  };
+
+  window.toggleGroup = function (id) {
+    var grp = document.getElementById(id);
+    if (grp) grp.classList.toggle('open');
+  };
+
+  window.closeMobileSidebar = function () {
+    var sb = getSidebar();
+    var overlay = document.getElementById('sb-overlay');
+    if (sb) sb.classList.remove('mobile-open');
+    if (overlay) overlay.classList.remove('visible');
+  };
+
+  /* Restaurar estado colapsado */
+  try {
+    var saved = localStorage.getItem(SB_KEY);
+    if (saved === '1') applyState(true);
+  } catch(e) {}
+
+  /* En móvil el toggle abre el sidebar en lugar de colapsarlo */
+  if (window.innerWidth <= 768) {
+    var btn = getToggleBtn();
+    if (btn) {
+      btn.onclick = function () {
+        var sb = getSidebar();
+        var overlay = document.getElementById('sb-overlay');
+        sb.classList.toggle('mobile-open');
+        overlay.classList.toggle('visible');
+      };
+    }
+  }
+})();
+</script>
+{% endblock %}

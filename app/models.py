@@ -167,7 +167,11 @@ class DetalleServicio(Model):
 
 
 # ══════════════════════════════════════════════
-# EVENTOS SQLALCHEMY — cálculo automático
+# EVENTOS SQLALCHEMY — solo subtotal automático
+# El total de la orden se recalcula desde DetalleServicioView
+# (post_add / post_update / post_delete) porque FAB hace commit
+# antes de que los eventos after_* puedan persistir cambios en
+# objetos relacionados.
 # ══════════════════════════════════════════════
 
 def _antes_de_guardar_detalle(mapper, connection, target):
@@ -178,28 +182,6 @@ def _antes_de_guardar_detalle(mapper, connection, target):
     target._calcular()
 
 
-def _despues_de_guardar_detalle(mapper, connection, target):
-    """
-    Se dispara DESPUÉS de INSERT/UPDATE en DetalleServicio.
-    Recalcula el total de la orden padre.
-    IMPORTANTE: usa target.orden directamente (ya está en sesión).
-    """
-    if target.orden:
-        target.orden.recalcular_total()
-
-
-def _despues_de_eliminar_detalle(mapper, connection, target):
-    """
-    Se dispara DESPUÉS de DELETE en DetalleServicio.
-    Recalcula el total de la orden para que no quede desactualizado.
-    """
-    if target.orden:
-        target.orden.recalcular_total()
-
-
-# Registrar los eventos
+# Registrar solo before — suficiente para subtotal
 event.listen(DetalleServicio, "before_insert", _antes_de_guardar_detalle)
 event.listen(DetalleServicio, "before_update", _antes_de_guardar_detalle)
-event.listen(DetalleServicio, "after_insert",  _despues_de_guardar_detalle)
-event.listen(DetalleServicio, "after_update",  _despues_de_guardar_detalle)
-event.listen(DetalleServicio, "after_delete",  _despues_de_eliminar_detalle)

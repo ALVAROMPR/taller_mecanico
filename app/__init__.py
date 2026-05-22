@@ -1,5 +1,6 @@
 from flask import Flask
 from .extensions import appbuilder, db, migrate
+from flask_appbuilder import AppBuilder
 
 
 def create_app() -> Flask:
@@ -23,6 +24,7 @@ def create_app() -> Flask:
 
         db.create_all()
 
+        #appbuilder.init_app(app, db.session, base_template='appbuilder/mybase.html')
         appbuilder.init_app(app, db.session)
 
         # Registrar vistas (incluye add_view al menú)
