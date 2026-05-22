@@ -1,7 +1,7 @@
 import requests
 import json
 
-API_KEY = "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"
+API_KEY = "cc"
 
 def analizar_ventas(data):
     prompt = f"Analiza los datos de ventas y proporciona un resumen de las tendencias y patrones. Datos: {data}"
