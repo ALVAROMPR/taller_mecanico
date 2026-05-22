@@ -1,386 +1,716 @@
 {% extends "appbuilder/base.html" %}
-
 {% block content %}
 
-<!-- Chart.js -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
 <style>
-  /* ── Variables de color automotriz ── */
-  :root {
-    --az-dark:   #1a2332;
-    --az-blue:   #2563eb;
-    --az-green:  #16a34a;
-    --az-orange: #ea580c;
-    --az-red:    #dc2626;
-    --az-purple: #7c3aed;
-    --az-gray:   #f1f5f9;
-    --card-r:    14px;
-  }
+/* ═══════════════════════════════════════════
+   TOKENS
+═══════════════════════════════════════════ */
+:root {
+  --ink:       #0b0f17;
+  --ink-2:     #111827;
+  --surface:   #141b27;
+  --surface-2: #1c2636;
+  --rim:       rgba(255,255,255,.07);
+  --rim-2:     rgba(255,255,255,.12);
 
-  body { background: var(--az-gray); }
+  --neon-blue:   #3b82f6;
+  --neon-cyan:   #22d3ee;
+  --neon-green:  #4ade80;
+  --neon-amber:  #fbbf24;
+  --neon-rose:   #fb7185;
+  --neon-purple: #a78bfa;
 
-  .kpi-card {
-    border: none;
-    border-radius: var(--card-r);
-    color: #fff;
-    box-shadow: 0 4px 18px rgba(0,0,0,.13);
-    transition: transform .2s;
-  }
-  .kpi-card:hover { transform: translateY(-4px); }
+  --text-primary:   #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted:     #475569;
 
-  .kpi-card .card-body { padding: 1.4rem 1.6rem; }
-  .kpi-card .kpi-icon  { font-size: 2.4rem; opacity: .35; }
-  .kpi-card .kpi-value { font-size: 2rem; font-weight: 700; line-height: 1; }
-  .kpi-card .kpi-label { font-size: .85rem; opacity: .85; margin-top: 4px; }
+  --r:   12px;
+  --r-lg: 18px;
 
-  .bg-az-blue   { background: linear-gradient(135deg,#2563eb,#1d4ed8); }
-  .bg-az-green  { background: linear-gradient(135deg,#16a34a,#15803d); }
-  .bg-az-orange { background: linear-gradient(135deg,#ea580c,#c2410c); }
-  .bg-az-red    { background: linear-gradient(135deg,#dc2626,#b91c1c); }
-  .bg-az-purple { background: linear-gradient(135deg,#7c3aed,#6d28d9); }
-  .bg-az-teal   { background: linear-gradient(135deg,#0891b2,#0e7490); }
-  .bg-az-rose   { background: linear-gradient(135deg,#e11d48,#be123c); }
+  --font-display: 'Barlow Condensed', sans-serif;
+  --font-body:    'DM Sans', sans-serif;
+}
 
-  .chart-card {
-    border: none;
-    border-radius: var(--card-r);
-    box-shadow: 0 2px 12px rgba(0,0,0,.07);
-    background: #fff;
-  }
-  .chart-card .card-header {
-    background: #fff;
-    border-bottom: 1px solid #e2e8f0;
-    border-radius: var(--card-r) var(--card-r) 0 0;
-    padding: .9rem 1.4rem;
-    font-weight: 700;
-    font-size: 1rem;
-    color: var(--az-dark);
-  }
+/* ── base ── */
+body, .container-fluid { background: var(--ink) !important; color: var(--text-primary); font-family: var(--font-body); }
 
-  .badge-estado {
-    font-size: .75rem;
-    padding: .3em .7em;
-    border-radius: 999px;
-    font-weight: 600;
-  }
-  .badge-pendiente  { background:#fef3c7; color:#92400e; }
-  .badge-en-proceso { background:#dbeafe; color:#1e40af; }
-  .badge-finalizado { background:#dcfce7; color:#166534; }
-  .badge-entregado  { background:#f3e8ff; color:#6b21a8; }
+/* ── encabezado de página ── */
+.dash-header {
+  padding: 32px 32px 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+.dash-header__eyebrow {
+  font-family: var(--font-display);
+  font-size: 1.72rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--neon-cyan);
+  margin-bottom: 4px;
+}
+.dash-header__title {
+  font-family: var(--font-display);
+  font-size: 2.6rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--text-primary);
+  letter-spacing: -.01em;
+}
+.dash-header__title span { color: var(--neon-blue); }
+.dash-header__meta {
+  font-size: 1.75rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
 
-  .page-header h2 { font-weight: 700; color: var(--az-dark); font-size: 1.5rem; }
-  .page-header p  { color: #64748b; margin: 0; }
+/* ── divisor con glow ── */
+.dash-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--neon-blue), var(--neon-cyan), transparent);
+  opacity: .3;
+  margin: 20px 32px;
+}
+
+/* ── grid principal ── */
+.dash-body { padding: 0 24px 32px; display: flex; flex-direction: column; gap: 20px; }
+
+/* ── KPI strip ── */
+.kpi-strip { display: grid; gap: 12px; grid-template-columns: repeat(4, 1fr); }
+.kpi-strip--sm { grid-template-columns: repeat(5, 1fr); }
+
+.kpi {
+  background: var(--surface);
+  border: 1px solid var(--rim);
+  border-radius: var(--r);
+  padding: 20px 20px 16px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color .2s, transform .2s;
+}
+.kpi:hover { border-color: var(--rim-2); transform: translateY(-2px); }
+
+/* barra de acento izquierda */
+.kpi::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 20%; bottom: 20%;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--kpi-accent, var(--neon-blue));
+  box-shadow: 0 0 8px var(--kpi-accent, var(--neon-blue));
+}
+/* reflejo diagonal */
+.kpi::after {
+  content: '';
+  position: absolute;
+  right: -30px; top: -30px;
+  width: 90px; height: 90px;
+  background: radial-gradient(circle, var(--kpi-accent, var(--neon-blue)) 0%, transparent 70%);
+  opacity: .06;
+  border-radius: 50%;
+}
+
+.kpi__label {
+  font-size: 1.75rem;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.kpi__value {
+  font-family: var(--font-display);
+  font-size: 2.2rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--text-primary);
+  letter-spacing: -.02em;
+}
+.kpi__value--sm { font-size: 1.75rem; }
+.kpi__icon {
+  position: absolute;
+  right: 16px; bottom: 12px;
+  font-size: 1.76rem;
+  opacity: .1;
+  color: var(--kpi-accent, var(--neon-blue));
+}
+
+/* accentos por tipo */
+.kpi--blue   { --kpi-accent: var(--neon-blue);   }
+.kpi--cyan   { --kpi-accent: var(--neon-cyan);   }
+.kpi--green  { --kpi-accent: var(--neon-green);  }
+.kpi--amber  { --kpi-accent: var(--neon-amber);  }
+.kpi--rose   { --kpi-accent: var(--neon-rose);   }
+.kpi--purple { --kpi-accent: var(--neon-purple); }
+
+/* ── cards de gráfica ── */
+.chart-card {
+  background: var(--surface);
+  border: 1px solid var(--rim);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.chart-card__head {
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--rim);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.chart-card__head-icon {
+  width: 30px; height: 30px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.chart-card__title {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: .07em;
+  color: var(--text-primary);
+  text-transform: uppercase;
+}
+.chart-card__body { padding: 20px; flex: 1; }
+.chart-card__body--flush { padding: 0; }
+
+/* ── tabla de órdenes ── */
+.orders-table { width: 100%; border-collapse: collapse; }
+.orders-table thead tr {
+  border-bottom: 1px solid var(--rim);
+}
+.orders-table th {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 12px 16px;
+  text-align: left;
+}
+.orders-table td {
+  padding: 11px 16px;
+  font-size: 1.75rem;
+  color: var(--text-secondary);
+  border-bottom: 1px solid rgba(255,255,255,.04);
+}
+.orders-table tbody tr:last-child td { border-bottom: none; }
+.orders-table tbody tr { transition: background .15s; }
+.orders-table tbody tr:hover { background: rgba(255,255,255,.03); }
+.order-id { font-family: var(--font-display); font-weight: 700; color: var(--text-muted); font-size: 1.75rem; }
+.order-vehicle { color: var(--text-primary); font-weight: 500; }
+.order-total { font-family: var(--font-display); font-weight: 700; font-size: 1.75rem; color: var(--neon-green); }
+
+/* ── badges de estado ── */
+.badge-estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  padding: .28em .75em;
+  border-radius: 999px;
+}
+.badge-estado::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: .7; }
+.badge-pendiente  { background: rgba(251,191,36,.12);  color: var(--neon-amber);  border: 1px solid rgba(251,191,36,.2);  }
+.badge-en-proceso { background: rgba(59,130,246,.12);  color: var(--neon-blue);   border: 1px solid rgba(59,130,246,.2);  }
+.badge-finalizado { background: rgba(74,222,128,.12);  color: var(--neon-green);  border: 1px solid rgba(74,222,128,.2);  }
+.badge-entregado  { background: rgba(167,139,250,.12); color: var(--neon-purple); border: 1px solid rgba(167,139,250,.2); }
+
+/* ── layout de filas ── */
+.dash-row { display: grid; gap: 16px; }
+.dash-row--3-1 { grid-template-columns: 3fr 1fr; }
+.dash-row--1-1 { grid-template-columns: 1fr 1fr; }
+
+/* ── sección IA ── */
+.ia-card {
+  background: var(--surface);
+  border: 1px solid rgba(59,130,246,.3);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  box-shadow: 0 0 40px rgba(59,130,246,.06);
+}
+.ia-card__head {
+  background: linear-gradient(100deg, #0f172a 0%, #1e3a5f 50%, #162447 100%);
+  padding: 20px 28px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border-bottom: 1px solid rgba(59,130,246,.2);
+}
+.ia-card__icon {
+  width: 44px; height: 44px;
+  background: rgba(59,130,246,.2);
+  border: 1px solid rgba(59,130,246,.3);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; color: var(--neon-cyan);
+  flex-shrink: 0;
+}
+.ia-card__title {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: #fff;
+  line-height: 1.1;
+}
+.ia-card__sub { font-size: 1.75rem; color: rgba(255,255,255,.4); margin-top: 2px; }
+.ia-badge {
+  margin-left: auto;
+  background: rgba(34,211,238,.1);
+  color: var(--neon-cyan);
+  border: 1px solid rgba(34,211,238,.25);
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: .4em 1em;
+  border-radius: 999px;
+}
+.ia-card__body { padding: 24px 28px; }
+
+/* secciones de IA parseadas */
+.ia-block {
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin-bottom: 12px;
+  border-left: 3px solid;
+}
+.ia-block:last-child { margin-bottom: 0; }
+.ia-block--resumen   { background: rgba(59,130,246,.07);  border-color: var(--neon-blue);   }
+.ia-block--destac    { background: rgba(74,222,128,.07);  border-color: var(--neon-green);  }
+.ia-block--recomend  { background: rgba(251,191,36,.07);  border-color: var(--neon-amber);  }
+.ia-block--default   { background: rgba(255,255,255,.03); border-color: var(--text-muted);  }
+
+.ia-block__title {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.ia-block--resumen  .ia-block__title { color: var(--neon-blue);  }
+.ia-block--destac   .ia-block__title { color: var(--neon-green); }
+.ia-block--recomend .ia-block__title { color: var(--neon-amber); }
+.ia-block--default  .ia-block__title { color: var(--text-muted); }
+
+.ia-item {
+  display: flex; gap: 10px; margin-bottom: 8px;
+  font-size: 1.75rem; line-height: 1.7; color: var(--text-secondary);
+}
+.ia-item:last-child { margin-bottom: 0; }
+.ia-num {
+  width: 20px; height: 20px; border-radius: 50%;
+  font-size: 1.75rem; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 3px; color: var(--ink);
+}
+.ia-block--resumen  .ia-num { background: var(--neon-blue);  }
+.ia-block--destac   .ia-num { background: var(--neon-green); }
+.ia-block--recomend .ia-num { background: var(--neon-amber); }
+.ia-block--default  .ia-num { background: var(--text-muted); }
+
+.ia-plain { font-size: 1.75rem; line-height: 1.8; color: var(--text-secondary); white-space: pre-line; }
+
+/* ── animación entrada ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+.kpi         { animation: fadeUp .4s ease both; }
+.chart-card  { animation: fadeUp .45s ease both; }
+.ia-card     { animation: fadeUp .5s ease both; }
+.kpi:nth-child(1)  { animation-delay: .05s; }
+.kpi:nth-child(2)  { animation-delay: .10s; }
+.kpi:nth-child(3)  { animation-delay: .15s; }
+.kpi:nth-child(4)  { animation-delay: .20s; }
+.kpi:nth-child(5)  { animation-delay: .25s; }
+
+/* ── responsive ── */
+@media (max-width: 900px) {
+  .kpi-strip        { grid-template-columns: repeat(2, 1fr); }
+  .kpi-strip--sm    { grid-template-columns: repeat(2, 1fr); }
+  .dash-row--3-1    { grid-template-columns: 1fr; }
+  .dash-row--1-1    { grid-template-columns: 1fr; }
+  .dash-header__title { font-size: 1.75rem; }
+}
+@media (max-width: 540px) {
+  .kpi-strip, .kpi-strip--sm { grid-template-columns: 1fr 1fr; }
+  .dash-body { padding: 0 12px 24px; }
+  .dash-header { padding: 20px 16px 0; }
+  .dash-divider { margin: 16px; }
+}
 </style>
 
-<div class="container-fluid px-4 py-4">
-
-  <!-- ── Encabezado ── -->
-  <div class="row mb-4 page-header align-items-center">
-    <div class="col">
-      <h2><i class="fa fa-tachometer me-2" style="color:var(--az-blue)"></i>Panel Administrativo</h2>
-      <p>Taller Mecánico — resumen en tiempo real</p>
+{# ══ ENCABEZADO ══ #}
+<div class="dash-header">
+  <div>
+    <div class="dash-header__eyebrow">
+      <i class="fa fa-circle" style="font-size:.4rem; vertical-align:middle;"></i>
+      Sistema de Gestión
     </div>
-    <div class="col-auto text-muted small">
-      <i class="fa fa-clock-o me-1"></i>
-      {{ self.current_user if self.current_user else "" }}
-    </div>
+    <div class="dash-header__title">Panel <span>Administrativo</span></div>
   </div>
+  <div class="dash-header__meta">
+    <i class="fa fa-clock-o"></i>
+    Taller Mecánico
+  </div>
+</div>
+<div class="dash-divider"></div>
 
-  <!-- ── Fila 1: KPIs principales ── -->
-  <div class="row g-3 mb-4">
+{# ══ CUERPO ══ #}
+<div class="dash-body">
 
-    <div class="col-6 col-md-3">
-      <div class="card kpi-card bg-az-blue">
-        <div class="card-body d-flex justify-content-between align-items-center">
-          <div>
-            <div class="kpi-value">{{ total_clientes }}</div>
-            <div class="kpi-label">Clientes</div>
-          </div>
-          <i class="fa fa-users kpi-icon"></i>
-        </div>
-      </div>
+  {# ── KPIs principales ── #}
+  <div class="kpi-strip">
+
+    <div class="kpi kpi--blue">
+      <div class="kpi__label">Clientes</div>
+      <div class="kpi__value">{{ total_clientes }}</div>
+      <i class="fa fa-users kpi__icon"></i>
     </div>
 
-    <div class="col-6 col-md-3">
-      <div class="card kpi-card bg-az-green">
-        <div class="card-body d-flex justify-content-between align-items-center">
-          <div>
-            <div class="kpi-value">{{ total_vehiculos }}</div>
-            <div class="kpi-label">Vehículos</div>
-          </div>
-          <i class="fa fa-car kpi-icon"></i>
-        </div>
-      </div>
+    <div class="kpi kpi--cyan">
+      <div class="kpi__label">Vehículos</div>
+      <div class="kpi__value">{{ total_vehiculos }}</div>
+      <i class="fa fa-car kpi__icon"></i>
     </div>
 
-    <div class="col-6 col-md-3">
-      <div class="card kpi-card bg-az-orange">
-        <div class="card-body d-flex justify-content-between align-items-center">
-          <div>
-            <div class="kpi-value">{{ total_ordenes }}</div>
-            <div class="kpi-label">Órdenes totales</div>
-          </div>
-          <i class="fa fa-clipboard kpi-icon"></i>
-        </div>
-      </div>
+    <div class="kpi kpi--amber">
+      <div class="kpi__label">Órdenes totales</div>
+      <div class="kpi__value">{{ total_ordenes }}</div>
+      <i class="fa fa-clipboard kpi__icon"></i>
     </div>
 
-    <div class="col-6 col-md-3">
-      <div class="card kpi-card bg-az-red">
-        <div class="card-body d-flex justify-content-between align-items-center">
-          <div>
-            <div class="kpi-value">Bs {{ "%.0f"|format(ingresos_totales) }}</div>
-            <div class="kpi-label">Ingresos totales</div>
-          </div>
-          <i class="fa fa-money kpi-icon"></i>
-        </div>
-      </div>
+    <div class="kpi kpi--green">
+      <div class="kpi__label">Ingresos (Bs)</div>
+      <div class="kpi__value kpi__value--sm">{{ "%.0f"|format(ingresos_totales) }}</div>
+      <i class="fa fa-money kpi__icon"></i>
     </div>
 
   </div>
 
-  <!-- ── Fila 2: KPIs de estado + servicios activos ── -->
-  <div class="row g-3 mb-4">
+  {# ── KPIs de estado ── #}
+  <div class="kpi-strip kpi-strip--sm">
 
-    <div class="col-6 col-md">
-      <div class="card kpi-card bg-az-teal">
-        <div class="card-body">
-          <div class="kpi-value">{{ ordenes_pendientes }}</div>
-          <div class="kpi-label">Pendientes</div>
+    <div class="kpi kpi--amber">
+      <div class="kpi__label">Pendientes</div>
+      <div class="kpi__value">{{ ordenes_pendientes }}</div>
+      <i class="fa fa-hourglass-start kpi__icon"></i>
+    </div>
+
+    <div class="kpi kpi--blue">
+      <div class="kpi__label">En proceso</div>
+      <div class="kpi__value">{{ ordenes_en_proceso }}</div>
+      <i class="fa fa-cogs kpi__icon"></i>
+    </div>
+
+    <div class="kpi kpi--green">
+      <div class="kpi__label">Finalizadas</div>
+      <div class="kpi__value">{{ ordenes_finalizadas }}</div>
+      <i class="fa fa-check kpi__icon"></i>
+    </div>
+
+    <div class="kpi kpi--purple">
+      <div class="kpi__label">Entregadas</div>
+      <div class="kpi__value">{{ ordenes_entregadas }}</div>
+      <i class="fa fa-flag-checkered kpi__icon"></i>
+    </div>
+
+    <div class="kpi kpi--rose">
+      <div class="kpi__label">Servicios activos</div>
+      <div class="kpi__value">{{ servicios_activos }}</div>
+      <i class="fa fa-wrench kpi__icon"></i>
+    </div>
+
+  </div>
+
+  {# ── Fila gráficas: ingresos + dona ── #}
+  <div class="dash-row dash-row--3-1">
+
+    <div class="chart-card">
+      <div class="chart-card__head">
+        <div class="chart-card__head-icon" style="background:rgba(59,130,246,.15); color:var(--neon-blue);">
+          <i class="fa fa-bar-chart"></i>
         </div>
+        <span class="chart-card__title">Ingresos por Orden de Trabajo</span>
+        <span style="margin-left:auto; font-size:.72rem; color:var(--text-muted);">Bs</span>
+      </div>
+      <div class="chart-card__body">
+        <canvas id="chartIngresos" style="max-height:260px;"></canvas>
       </div>
     </div>
 
-    <div class="col-6 col-md">
-      <div class="card kpi-card bg-az-blue">
-        <div class="card-body">
-          <div class="kpi-value">{{ ordenes_en_proceso }}</div>
-          <div class="kpi-label">En proceso</div>
+    <div class="chart-card">
+      <div class="chart-card__head">
+        <div class="chart-card__head-icon" style="background:rgba(251,191,36,.12); color:var(--neon-amber);">
+          <i class="fa fa-pie-chart"></i>
         </div>
+        <span class="chart-card__title">Por Estado</span>
       </div>
-    </div>
-
-    <div class="col-6 col-md">
-      <div class="card kpi-card bg-az-green">
-        <div class="card-body">
-          <div class="kpi-value">{{ ordenes_finalizadas }}</div>
-          <div class="kpi-label">Finalizadas</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-6 col-md">
-      <div class="card kpi-card bg-az-purple">
-        <div class="card-body">
-          <div class="kpi-value">{{ ordenes_entregadas }}</div>
-          <div class="kpi-label">Entregadas</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-6 col-md">
-      <div class="card kpi-card bg-az-rose">
-        <div class="card-body">
-          <div class="kpi-value">{{ servicios_activos }}</div>
-          <div class="kpi-label">Servicios activos</div>
-        </div>
+      <div class="chart-card__body" style="display:flex; align-items:center; justify-content:center;">
+        <canvas id="chartEstados" style="max-height:220px;"></canvas>
       </div>
     </div>
 
   </div>
 
-  <!-- ── Fila 3: Gráfica ingresos + dona estados ── -->
-  <div class="row g-3 mb-4">
+  {# ── Fila: servicios + tabla órdenes ── #}
+  <div class="dash-row dash-row--1-1">
 
-    <!-- Gráfica ingresos -->
-    <div class="col-md-8">
-      <div class="card chart-card h-100">
-        <div class="card-header">
-          <i class="fa fa-bar-chart me-2" style="color:var(--az-blue)"></i>
-          Ingresos por Orden de Trabajo (Bs)
+    <div class="chart-card">
+      <div class="chart-card__head">
+        <div class="chart-card__head-icon" style="background:rgba(74,222,128,.1); color:var(--neon-green);">
+          <i class="fa fa-wrench"></i>
         </div>
-        <div class="card-body">
-          <canvas id="chartIngresos" style="max-height:280px"></canvas>
-        </div>
+        <span class="chart-card__title">Servicios más Solicitados</span>
+      </div>
+      <div class="chart-card__body">
+        <canvas id="chartServicios" style="max-height:240px;"></canvas>
       </div>
     </div>
 
-    <!-- Dona estados -->
-    <div class="col-md-4">
-      <div class="card chart-card h-100">
-        <div class="card-header">
-          <i class="fa fa-pie-chart me-2" style="color:var(--az-orange)"></i>
-          Órdenes por Estado
+    <div class="chart-card">
+      <div class="chart-card__head">
+        <div class="chart-card__head-icon" style="background:rgba(167,139,250,.1); color:var(--neon-purple);">
+          <i class="fa fa-list-alt"></i>
         </div>
-        <div class="card-body d-flex align-items-center justify-content-center">
-          <canvas id="chartEstados" style="max-height:260px"></canvas>
-        </div>
+        <span class="chart-card__title">Últimas Órdenes</span>
       </div>
-    </div>
-
-  </div>
-
-  <!-- ── Fila 4: Servicios populares + órdenes recientes ── -->
-  <div class="row g-3">
-
-    <!-- Servicios más solicitados -->
-    <div class="col-md-6">
-      <div class="card chart-card h-100">
-        <div class="card-header">
-          <i class="fa fa-wrench me-2" style="color:var(--az-green)"></i>
-          Servicios más Solicitados
+      <div class="chart-card__body--flush" style="flex:1; overflow:hidden;">
+        {% if ordenes %}
+        <table class="orders-table">
+          <thead>
+            <tr>
+              <th>N°</th>
+              <th>Vehículo</th>
+              <th>Estado</th>
+              <th style="text-align:right; padding-right:20px;">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for orden in ordenes %}
+            <tr>
+              <td><span class="order-id">#{{ orden.id }}</span></td>
+              <td><span class="order-vehicle">{{ orden.vehiculo }}</span></td>
+              <td>
+                {% if orden.estado == "Pendiente" %}
+                  <span class="badge-estado badge-pendiente">Pendiente</span>
+                {% elif orden.estado == "En Proceso" %}
+                  <span class="badge-estado badge-en-proceso">En Proceso</span>
+                {% elif orden.estado == "Finalizado" %}
+                  <span class="badge-estado badge-finalizado">Finalizado</span>
+                {% else %}
+                  <span class="badge-estado badge-entregado">Entregado</span>
+                {% endif %}
+              </td>
+              <td style="text-align:right; padding-right:20px;">
+                <span class="order-total">{{ orden.total or 0 }}</span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div style="padding:32px; text-align:center; color:var(--text-muted); font-size:.875rem;">
+          <i class="fa fa-inbox" style="font-size:2rem; display:block; margin-bottom:10px; opacity:.3;"></i>
+          Sin órdenes registradas
         </div>
-        <div class="card-body">
-          <canvas id="chartServicios" style="max-height:260px"></canvas>
-        </div>
-      </div>
-    </div>
-
-    <!-- Últimas órdenes -->
-    <div class="col-md-6">
-      <div class="card chart-card h-100">
-        <div class="card-header">
-          <i class="fa fa-list-alt me-2" style="color:var(--az-purple)"></i>
-          Últimas Órdenes Registradas
-        </div>
-        <div class="card-body p-0">
-          {% if ordenes %}
-          <table class="table table-hover mb-0">
-            <thead class="table-light">
-              <tr>
-                <th class="ps-3">N°</th>
-                <th>Vehículo</th>
-                <th>Estado</th>
-                <th class="pe-3">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for orden in ordenes %}
-              <tr>
-                <td class="ps-3 text-muted">#{{ orden.id }}</td>
-                <td>{{ orden.vehiculo }}</td>
-                <td>
-                  {% if orden.estado == "Pendiente" %}
-                    <span class="badge-estado badge-pendiente">Pendiente</span>
-                  {% elif orden.estado == "En Proceso" %}
-                    <span class="badge-estado badge-en-proceso">En Proceso</span>
-                  {% elif orden.estado == "Finalizado" %}
-                    <span class="badge-estado badge-finalizado">Finalizado</span>
-                  {% else %}
-                    <span class="badge-estado badge-entregado">Entregado</span>
-                  {% endif %}
-                </td>
-                <td class="pe-3 fw-bold">Bs {{ orden.total or 0 }}</td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-          {% else %}
-          <p class="text-muted text-center py-4">Sin órdenes registradas.</p>
-          {% endif %}
-        </div>
+        {% endif %}
       </div>
     </div>
 
   </div>
 
-</div><!-- /container -->
+  {# ── Análisis IA ── #}
+  {% if analisis_ia %}
+  <div class="ia-card">
 
+    <div class="ia-card__head">
+      <div class="ia-card__icon"><i class="fa fa-lightbulb-o"></i></div>
+      <div>
+        <div class="ia-card__title">Análisis Inteligente</div>
+        <div class="ia-card__sub">Generado por DeepSeek · OpenRouter</div>
+      </div>
+      <span class="ia-badge">✦ IA Activa</span>
+    </div>
 
+    <div class="ia-card__body">
+      <div id="ia-raw"    style="display:none;">{{ analisis_ia }}</div>
+      <div id="ia-spinner" style="text-align:center; padding:20px; color:var(--text-muted);">
+        <i class="fa fa-circle-o-notch fa-spin" style="font-size:20px;"></i>
+        <div style="margin-top:8px; font-size:.8rem;">Procesando análisis…</div>
+      </div>
+      <div id="ia-output"></div>
+    </div>
+
+  </div>
+  {% endif %}
+
+</div>{# /dash-body #}
+
+{# ══ SCRIPTS ══ #}
 <script>
-// ── Datos desde el servidor ──────────────────────────────────────
-const labelsIngresos  = {{ labels          | tojson }};
-const valoresIngresos = {{ valores         | tojson }};
-const labelsServ      = {{ labels_servicios  | tojson }};
-const valoresServ     = {{ valores_servicios | tojson }};
-const labelsEst       = {{ estados_labels    | tojson }};
-const valoresEst      = {{ estados_valores   | tojson }};
+/* ── Chart.js global defaults ── */
+Chart.defaults.color          = '#64748b';
+Chart.defaults.borderColor    = 'rgba(255,255,255,.06)';
+Chart.defaults.font.family    = "'DM Sans', sans-serif";
 
-const COLORES = {
-  azul:   "#2563eb",
-  verde:  "#16a34a",
-  naranja:"#ea580c",
-  rojo:   "#dc2626",
-  morado: "#7c3aed",
-  teal:   "#0891b2",
-};
+const labelsIngresos  = {{ labels           | tojson }};
+const valoresIngresos = {{ valores          | tojson }};
+const labelsServ      = {{ labels_servicios | tojson }};
+const valoresServ     = {{ valores_servicios| tojson }};
+const labelsEst       = {{ estados_labels   | tojson }};
+const valoresEst      = {{ estados_valores  | tojson }};
 
-// ── Gráfica 1: Ingresos por OT ───────────────────────────────────
-new Chart(document.getElementById("chartIngresos"), {
-  type: "bar",
+/* ── Gráfica 1: Ingresos ── */
+new Chart(document.getElementById('chartIngresos'), {
+  type: 'bar',
   data: {
     labels: labelsIngresos,
     datasets: [{
-      label: "Bs",
+      label: 'Bs',
       data: valoresIngresos,
-      backgroundColor: COLORES.azul + "cc",
-      borderColor: COLORES.azul,
+      backgroundColor: 'rgba(59,130,246,.25)',
+      borderColor:     '#3b82f6',
       borderWidth: 1,
-      borderRadius: 6,
+      borderRadius: 5,
+      hoverBackgroundColor: 'rgba(59,130,246,.45)',
     }]
   },
   options: {
     responsive: true,
     plugins: { legend: { display: false } },
     scales: {
+      x: { grid: { color: 'rgba(255,255,255,.04)' }, ticks: { font: { size: 11 } } },
       y: {
         beginAtZero: true,
-        ticks: { callback: v => "Bs " + v.toLocaleString() }
+        grid: { color: 'rgba(255,255,255,.04)' },
+        ticks: { callback: v => 'Bs ' + v.toLocaleString(), font: { size: 11 } }
       }
     }
   }
 });
 
-// ── Gráfica 2: Estados (dona) ─────────────────────────────────────
-new Chart(document.getElementById("chartEstados"), {
-  type: "doughnut",
+/* ── Gráfica 2: Dona estados ── */
+new Chart(document.getElementById('chartEstados'), {
+  type: 'doughnut',
   data: {
     labels: labelsEst,
     datasets: [{
       data: valoresEst,
       backgroundColor: [
-        COLORES.teal,
-        COLORES.azul,
-        COLORES.verde,
-        COLORES.morado,
+        'rgba(251,191,36,.7)',
+        'rgba(59,130,246,.7)',
+        'rgba(74,222,128,.7)',
+        'rgba(167,139,250,.7)',
       ],
-      borderWidth: 2,
-      borderColor: "#fff",
+      borderColor: '#141b27',
+      borderWidth: 3,
+      hoverOffset: 6,
     }]
   },
   options: {
     responsive: true,
+    cutout: '65%',
     plugins: {
-      legend: { position: "bottom", labels: { font: { size: 12 } } }
-    },
-    cutout: "60%",
-  }
-});
-
-// ── Gráfica 3: Servicios populares ───────────────────────────────
-new Chart(document.getElementById("chartServicios"), {
-  type: "bar",
-  data: {
-    labels: labelsServ,
-    datasets: [{
-      label: "Veces solicitado",
-      data: valoresServ,
-      backgroundColor: COLORES.verde + "cc",
-      borderColor: COLORES.verde,
-      borderWidth: 1,
-      borderRadius: 6,
-    }]
-  },
-  options: {
-    indexAxis: "y",          // barras horizontales
-    responsive: true,
-    plugins: { legend: { display: false } },
-    scales: {
-      x: { beginAtZero: true, ticks: { stepSize: 1 } }
+      legend: {
+        position: 'bottom',
+        labels: { padding: 14, font: { size: 11 }, boxWidth: 10, borderRadius: 3 }
+      }
     }
   }
 });
+
+/* ── Gráfica 3: Servicios ── */
+new Chart(document.getElementById('chartServicios'), {
+  type: 'bar',
+  data: {
+    labels: labelsServ,
+    datasets: [{
+      label: 'Veces solicitado',
+      data: valoresServ,
+      backgroundColor: 'rgba(74,222,128,.22)',
+      borderColor:     '#4ade80',
+      borderWidth: 1,
+      borderRadius: 5,
+      hoverBackgroundColor: 'rgba(74,222,128,.4)',
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { beginAtZero: true, grid: { color: 'rgba(255,255,255,.04)' }, ticks: { stepSize: 1, font: { size: 11 } } },
+      y: { grid: { display: false }, ticks: { font: { size: 11 } } }
+    }
+  }
+});
+
+/* ── Parser IA ── */
+(function () {
+  var raw     = document.getElementById('ia-raw');
+  var output  = document.getElementById('ia-output');
+  var spinner = document.getElementById('ia-spinner');
+  if (!raw || !output) return;
+  var texto = raw.textContent.trim();
+  if (!texto) { if(spinner) spinner.style.display='none'; return; }
+
+  var MAPA = [
+    { keys:['resumen'],          cls:'ia-block--resumen',  icon:'fa-align-left'  },
+    { keys:['punto','destac'],   cls:'ia-block--destac',   icon:'fa-star'        },
+    { keys:['recomend'],         cls:'ia-block--recomend', icon:'fa-lightbulb-o' },
+  ];
+  function detectar(t){ var tl=t.toLowerCase(); for(var i=0;i<MAPA.length;i++) for(var j=0;j<MAPA[i].keys.length;j++) if(tl.indexOf(MAPA[i].keys[j])!==-1) return MAPA[i]; return {cls:'ia-block--default',icon:'fa-info-circle'}; }
+
+  var bloques=[], titulo=null, lineas=[];
+  texto.split('\n').forEach(function(raw_l){
+    var l=raw_l.trim(); if(!l) return;
+    var esH=/^(\d+[\.\-]\s+)?[A-ZÁÉÍÓÚÑ][^:]{2,50}:\s*$/.test(l)||/^\*\*[^*]+\*\*\s*$/.test(l);
+    if(esH){ if(titulo!==null) bloques.push({titulo:titulo,lineas:lineas}); titulo=l.replace(/\*\*/g,'').replace(/:$/,'').trim(); lineas=[]; }
+    else { if(titulo===null) titulo='Análisis'; lineas.push(l); }
+  });
+  if(titulo!==null) bloques.push({titulo:titulo,lineas:lineas});
+
+  if(!bloques.length){
+    if(spinner) spinner.style.display='none';
+    output.innerHTML='<div class="ia-block ia-block--default"><div class="ia-plain">'+texto+'</div></div>';
+    return;
+  }
+
+  var html='';
+  bloques.forEach(function(b){
+    var s=detectar(b.titulo);
+    var items=b.lineas.filter(function(x){return x.length>0;});
+    html+='<div class="ia-block '+s.cls+'">';
+    html+='<div class="ia-block__title"><i class="fa '+s.icon+'" style="margin-right:7px;"></i>'+b.titulo+'</div>';
+    if(items.length){
+      var esList=items.length>1||/^[-\*\d]/.test(items[0]);
+      if(esList){ items.forEach(function(item,idx){ var t=item.replace(/^[-\*\d\.]+\s*/,'').replace(/\*\*/g,''); html+='<div class="ia-item"><div class="ia-num">'+(idx+1)+'</div><div>'+t+'</div></div>'; }); }
+      else { html+='<div class="ia-plain">'+items.join(' ').replace(/\*\*/g,'')+'</div>'; }
+    }
+    html+='</div>';
+  });
+
+  if(spinner) spinner.style.display='none';
+  output.innerHTML=html;
+})();
 </script>
 
 {% endblock %}

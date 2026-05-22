@@ -9,7 +9,8 @@ from .models import (
     OrdenTrabajo,
     DetalleServicio,
 )
-
+# LÍNEA 13 — servicio IA
+from .ia_servicio import analizar_taller
 
 class DashboardView(BaseView):
     route_base   = "/dashboard"
@@ -97,6 +98,26 @@ class DashboardView(BaseView):
             .all()
         )
 
+        # ──────────────────────────────────────
+        # LÍNEA 94 — Análisis IA del taller
+        # Se llama solo si hay al menos una orden registrada
+        # para no desperdiciar tokens con datos vacíos.
+        # ──────────────────────────────────────
+        analisis_ia = ""
+        if total_ordenes > 0:
+            analisis_ia = analizar_taller(
+                ingresos_totales=ingresos_totales,
+                total_ordenes=total_ordenes,
+                ordenes_pendientes=ordenes_pendientes,
+                ordenes_en_proceso=ordenes_en_proceso,
+                ordenes_finalizadas=ordenes_finalizadas,
+                ordenes_entregadas=ordenes_entregadas,
+                servicios_populares=[
+                    (s.nombre, int(s.total_uso))
+                    for s in servicios_populares
+                ]
+            )
+ 
         return self.render_template(
             "dashboard.html",
             # KPIs
@@ -120,4 +141,6 @@ class DashboardView(BaseView):
             estados_valores=estados_valores,
             # Tabla reciente
             ordenes=ordenes_recientes,
+            # IA
+            analisis_ia=analisis_ia,
         )

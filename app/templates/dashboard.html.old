@@ -1,0 +1,620 @@
+{% extends "appbuilder/base.html" %}
+
+{% block content %}
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<style>
+  /* ── Variables de color automotriz ── */
+  :root {
+    --az-dark:   #1a2332;
+    --az-blue:   #2563eb;
+    --az-green:  #16a34a;
+    --az-orange: #ea580c;
+    --az-red:    #dc2626;
+    --az-purple: #7c3aed;
+    --az-gray:   #f1f5f9;
+    --card-r:    14px;
+  }
+
+  body { background: var(--az-gray); }
+
+  .kpi-card {
+    border: none;
+    border-radius: var(--card-r);
+    color: #fff;
+    box-shadow: 0 4px 18px rgba(0,0,0,.13);
+    transition: transform .2s;
+  }
+  .kpi-card:hover { transform: translateY(-4px); }
+
+  .kpi-card .card-body { padding: 1.4rem 1.6rem; }
+  .kpi-card .kpi-icon  { font-size: 2.4rem; opacity: .35; }
+  .kpi-card .kpi-value { font-size: 2rem; font-weight: 700; line-height: 1; }
+  .kpi-card .kpi-label { font-size: .85rem; opacity: .85; margin-top: 4px; }
+
+  .bg-az-blue   { background: linear-gradient(135deg,#2563eb,#1d4ed8); }
+  .bg-az-green  { background: linear-gradient(135deg,#16a34a,#15803d); }
+  .bg-az-orange { background: linear-gradient(135deg,#ea580c,#c2410c); }
+  .bg-az-red    { background: linear-gradient(135deg,#dc2626,#b91c1c); }
+  .bg-az-purple { background: linear-gradient(135deg,#7c3aed,#6d28d9); }
+  .bg-az-teal   { background: linear-gradient(135deg,#0891b2,#0e7490); }
+  .bg-az-rose   { background: linear-gradient(135deg,#e11d48,#be123c); }
+
+  .chart-card {
+    border: none;
+    border-radius: var(--card-r);
+    box-shadow: 0 2px 12px rgba(0,0,0,.07);
+    background: #fff;
+  }
+  .chart-card .card-header {
+    background: #fff;
+    border-bottom: 1px solid #e2e8f0;
+    border-radius: var(--card-r) var(--card-r) 0 0;
+    padding: .9rem 1.4rem;
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--az-dark);
+  }
+
+  .badge-estado {
+    font-size: .75rem;
+    padding: .3em .7em;
+    border-radius: 999px;
+    font-weight: 600;
+  }
+  .badge-pendiente  { background:#fef3c7; color:#92400e; }
+  .badge-en-proceso { background:#dbeafe; color:#1e40af; }
+  .badge-finalizado { background:#dcfce7; color:#166534; }
+  .badge-entregado  { background:#f3e8ff; color:#6b21a8; }
+
+  .page-header h2 { font-weight: 700; color: var(--az-dark); font-size: 1.5rem; }
+  .page-header p  { color: #64748b; margin: 0; }
+</style>
+
+<div class="container-fluid px-4 py-4">
+
+  <!-- ── Encabezado ── -->
+  <div class="row mb-4 page-header align-items-center">
+    <div class="col">
+      <h2><i class="fa fa-tachometer me-2" style="color:var(--az-blue)"></i>Panel Administrativo</h2>
+      <p>Taller Mecánico — resumen en tiempo real</p>
+    </div>
+    <div class="col-auto text-muted small">
+      <i class="fa fa-clock-o me-1"></i>
+      {{ self.current_user if self.current_user else "" }}
+    </div>
+  </div>
+
+  <!-- ── Fila 1: KPIs principales ── -->
+  <div class="row g-3 mb-4">
+
+    <div class="col-6 col-md-3">
+      <div class="card kpi-card bg-az-blue">
+        <div class="card-body d-flex justify-content-between align-items-center">
+          <div>
+            <div class="kpi-value">{{ total_clientes }}</div>
+            <div class="kpi-label">Clientes</div>
+          </div>
+          <i class="fa fa-users kpi-icon"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+      <div class="card kpi-card bg-az-green">
+        <div class="card-body d-flex justify-content-between align-items-center">
+          <div>
+            <div class="kpi-value">{{ total_vehiculos }}</div>
+            <div class="kpi-label">Vehículos</div>
+          </div>
+          <i class="fa fa-car kpi-icon"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+      <div class="card kpi-card bg-az-orange">
+        <div class="card-body d-flex justify-content-between align-items-center">
+          <div>
+            <div class="kpi-value">{{ total_ordenes }}</div>
+            <div class="kpi-label">Órdenes totales</div>
+          </div>
+          <i class="fa fa-clipboard kpi-icon"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+      <div class="card kpi-card bg-az-red">
+        <div class="card-body d-flex justify-content-between align-items-center">
+          <div>
+            <div class="kpi-value">Bs {{ "%.0f"|format(ingresos_totales) }}</div>
+            <div class="kpi-label">Ingresos totales</div>
+          </div>
+          <i class="fa fa-money kpi-icon"></i>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Fila 2: KPIs de estado + servicios activos ── -->
+  <div class="row g-3 mb-4">
+
+    <div class="col-6 col-md">
+      <div class="card kpi-card bg-az-teal">
+        <div class="card-body">
+          <div class="kpi-value">{{ ordenes_pendientes }}</div>
+          <div class="kpi-label">Pendientes</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-6 col-md">
+      <div class="card kpi-card bg-az-blue">
+        <div class="card-body">
+          <div class="kpi-value">{{ ordenes_en_proceso }}</div>
+          <div class="kpi-label">En proceso</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-6 col-md">
+      <div class="card kpi-card bg-az-green">
+        <div class="card-body">
+          <div class="kpi-value">{{ ordenes_finalizadas }}</div>
+          <div class="kpi-label">Finalizadas</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-6 col-md">
+      <div class="card kpi-card bg-az-purple">
+        <div class="card-body">
+          <div class="kpi-value">{{ ordenes_entregadas }}</div>
+          <div class="kpi-label">Entregadas</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-6 col-md">
+      <div class="card kpi-card bg-az-rose">
+        <div class="card-body">
+          <div class="kpi-value">{{ servicios_activos }}</div>
+          <div class="kpi-label">Servicios activos</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Fila 3: Gráfica ingresos + dona estados ── -->
+  <div class="row g-3 mb-4">
+
+    <!-- Gráfica ingresos -->
+    <div class="col-md-8">
+      <div class="card chart-card h-100">
+        <div class="card-header">
+          <i class="fa fa-bar-chart me-2" style="color:var(--az-blue)"></i>
+          Ingresos por Orden de Trabajo (Bs)
+        </div>
+        <div class="card-body">
+          <canvas id="chartIngresos" style="max-height:280px"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dona estados -->
+    <div class="col-md-4">
+      <div class="card chart-card h-100">
+        <div class="card-header">
+          <i class="fa fa-pie-chart me-2" style="color:var(--az-orange)"></i>
+          Órdenes por Estado
+        </div>
+        <div class="card-body d-flex align-items-center justify-content-center">
+          <canvas id="chartEstados" style="max-height:260px"></canvas>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Fila 4: Servicios populares + órdenes recientes ── -->
+  <div class="row g-3">
+
+    <!-- Servicios más solicitados -->
+    <div class="col-md-6">
+      <div class="card chart-card h-100">
+        <div class="card-header">
+          <i class="fa fa-wrench me-2" style="color:var(--az-green)"></i>
+          Servicios más Solicitados
+        </div>
+        <div class="card-body">
+          <canvas id="chartServicios" style="max-height:260px"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Últimas órdenes -->
+    <div class="col-md-6">
+      <div class="card chart-card h-100">
+        <div class="card-header">
+          <i class="fa fa-list-alt me-2" style="color:var(--az-purple)"></i>
+          Últimas Órdenes Registradas
+        </div>
+        <div class="card-body p-0">
+          {% if ordenes %}
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="ps-3">N°</th>
+                <th>Vehículo</th>
+                <th>Estado</th>
+                <th class="pe-3">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for orden in ordenes %}
+              <tr>
+                <td class="ps-3 text-muted">#{{ orden.id }}</td>
+                <td>{{ orden.vehiculo }}</td>
+                <td>
+                  {% if orden.estado == "Pendiente" %}
+                    <span class="badge-estado badge-pendiente">Pendiente</span>
+                  {% elif orden.estado == "En Proceso" %}
+                    <span class="badge-estado badge-en-proceso">En Proceso</span>
+                  {% elif orden.estado == "Finalizado" %}
+                    <span class="badge-estado badge-finalizado">Finalizado</span>
+                  {% else %}
+                    <span class="badge-estado badge-entregado">Entregado</span>
+                  {% endif %}
+                </td>
+                <td class="pe-3 fw-bold">Bs {{ orden.total or 0 }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+          <p class="text-muted text-center py-4">Sin órdenes registradas.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div><!-- /container -->
+{# ── Sección Análisis IA ── #}
+{% if analisis_ia %}
+<div class="container-fluid px-4 pb-4">
+  <div class="row">
+    <div class="col-12">
+ 
+      <div class="card" style="border:none; border-radius:16px;
+                                background:#fff;
+                                box-shadow:0 4px 24px rgba(37,99,235,.12);">
+ 
+        {# Encabezado azul oscuro #}
+        <div style="background:linear-gradient(135deg,#1a2332 0%,#2563eb 100%);
+                    border-radius:16px 16px 0 0; padding:20px 28px;
+                    display:flex; align-items:center; gap:16px;">
+ 
+          <div style="width:48px; height:48px; background:rgba(255,255,255,.18);
+                      border-radius:12px; display:flex; align-items:center;
+                      justify-content:center; flex-shrink:0;">
+            <i class="fa fa-lightbulb-o" style="font-size:22px; color:#fff;"></i>
+          </div>
+ 
+          <div style="flex:1;">
+            <div style="color:#fff; font-size:3.15rem; font-weight:700; line-height:1.2;">
+              Análisis Inteligente del Taller
+            </div>
+            <div style="color:rgba(255,255,255,.6); font-size:.85rem; margin-top:3px;">
+              Generado por DeepSeek · OpenRouter IA
+            </div>
+          </div>
+ 
+          <span style="background:rgba(255,255,255,.15); color:#fff;
+                       font-size:.78rem; font-weight:700; padding:.35em 1em;
+                       border-radius:999px; letter-spacing:.06em; border:1px solid rgba(255,255,255,.25);">
+            ✦ IA ACTIVA
+          </span>
+        </div>
+ 
+        {# Cuerpo — texto IA formateado con JS #}
+        <div class="card-body" style="padding:28px;">
+          <div id="ia-contenido"
+               style="font-size:1rem; line-height:1.85; color:#1e293b;">
+            {# El texto llega como texto plano con secciones tipo "Resumen:" #}
+            {# JS lo convierte en HTML visual con tarjetas por sección       #}
+            <div id="ia-raw" style="display:none;">{{ analisis_ia }}</div>
+ 
+            {# Spinner mientras JS procesa #}
+            <div id="ia-spinner" style="text-align:center; padding:24px; color:#94a3b8;">
+              <i class="fa fa-circle-o-notch fa-spin" style="font-size:24px;"></i>
+              <div style="margin-top:8px; font-size:.9rem;">Procesando análisis...</div>
+            </div>
+ 
+            <div id="ia-output"></div>
+          </div>
+        </div>
+ 
+      </div>
+    </div>
+  </div>
+</div>
+ 
+<style>
+  .ia-seccion {
+    border-radius: 12px;
+    padding: 18px 22px;
+    margin-bottom: 14px;
+  }
+  .ia-seccion:last-child { margin-bottom: 0; }
+ 
+  .ia-sec-titulo {
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+ 
+  .ia-sec-cuerpo {
+    font-size: 1rem;
+    line-height: 1.8;
+    color: #1e293b;
+  }
+ 
+  /* Colores por tipo de sección */
+  .ia-resumen      { background:#eff6ff; border-left:4px solid #2563eb; }
+  .ia-resumen      .ia-sec-titulo { color:#1d4ed8; }
+ 
+  .ia-destacados   { background:#f0fdf4; border-left:4px solid #16a34a; }
+  .ia-destacados   .ia-sec-titulo { color:#15803d; }
+ 
+  .ia-recomend     { background:#fff7ed; border-left:4px solid #ea580c; }
+  .ia-recomend     .ia-sec-titulo { color:#c2410c; }
+ 
+  .ia-default      { background:#f8fafc; border-left:4px solid #94a3b8; }
+  .ia-default      .ia-sec-titulo { color:#475569; }
+ 
+  /* Ítems numerados / con guion dentro de sección */
+  .ia-item {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 8px;
+    font-size: 1rem;
+    line-height: 1.7;
+    color: #1e293b;
+  }
+  .ia-item:last-child { margin-bottom: 0; }
+  .ia-bullet {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #2563eb;
+    color: #fff;
+    font-size: .72rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 3px;
+  }
+  .ia-bullet.verde  { background: #16a34a; }
+  .ia-bullet.naranja{ background: #ea580c; }
+  .ia-bullet.gris   { background: #64748b; }
+</style>
+ 
+<script>
+(function () {
+  var raw    = document.getElementById('ia-raw');
+  var output = document.getElementById('ia-output');
+  var spinner = document.getElementById('ia-spinner');
+ 
+  if (!raw || !output) return;
+ 
+  var texto = raw.textContent.trim();
+  if (!texto) { spinner.style.display = 'none'; return; }
+ 
+  /* Mapa de palabras clave → clase CSS + ícono FA + color bullet */
+  var SECCIONES = [
+    { keys: ['resumen'],          cls: 'ia-resumen',    icon: 'fa-align-left',    bullet: ''        },
+    { keys: ['punto', 'destac'],  cls: 'ia-destacados', icon: 'fa-star',          bullet: 'verde'   },
+    { keys: ['recomend'],         cls: 'ia-recomend',   icon: 'fa-lightbulb-o',   bullet: 'naranja' },
+  ];
+ 
+  function detectarClase(titulo) {
+    var t = titulo.toLowerCase();
+    for (var i = 0; i < SECCIONES.length; i++) {
+      for (var j = 0; j < SECCIONES[i].keys.length; j++) {
+        if (t.indexOf(SECCIONES[i].keys[j]) !== -1) return SECCIONES[i];
+      }
+    }
+    return { cls: 'ia-default', icon: 'fa-info-circle', bullet: 'gris' };
+  }
+ 
+  /* Divide el texto en bloques por líneas que terminan en ":" */
+  var bloques = [];
+  var tituloActual = null;
+  var lineasActual = [];
+ 
+  texto.split('\n').forEach(function (linea) {
+    var l = linea.trim();
+    if (!l) return;
+ 
+    /* Detectar encabezado: línea que termina en ":" o empieza con número+punto */
+    var esEncabezado = /^(\d+[\.\-]\s+)?[A-ZÁÉÍÓÚÑ][^:]{2,40}:\s*$/.test(l) ||
+                       /^\*\*[^*]+\*\*\s*$/.test(l);
+ 
+    if (esEncabezado) {
+      if (tituloActual !== null) {
+        bloques.push({ titulo: tituloActual, lineas: lineasActual });
+      }
+      tituloActual = l.replace(/\*\*/g, '').replace(/:$/, '').trim();
+      lineasActual = [];
+    } else {
+      /* Si no hay sección detectada todavía, crear una genérica */
+      if (tituloActual === null) {
+        tituloActual = 'Análisis';
+      }
+      lineasActual.push(l);
+    }
+  });
+  if (tituloActual !== null) {
+    bloques.push({ titulo: tituloActual, lineas: lineasActual });
+  }
+ 
+  /* Si no se detectaron secciones, mostrar texto plano mejorado */
+  if (bloques.length === 0) {
+    spinner.style.display = 'none';
+    output.innerHTML = '<div class="ia-seccion ia-default">'
+      + '<div class="ia-sec-cuerpo" style="white-space:pre-line;">' + texto + '</div></div>';
+    return;
+  }
+ 
+  /* Construir HTML */
+  var html = '';
+  bloques.forEach(function (bloque) {
+    var sec   = detectarClase(bloque.titulo);
+    var items = bloque.lineas.filter(function(l){ return l.length > 0; });
+ 
+    html += '<div class="ia-seccion ' + sec.cls + '">';
+    html += '<div class="ia-sec-titulo"><i class="fa ' + sec.icon + '"></i>' + bloque.titulo + '</div>';
+ 
+    if (items.length === 0) {
+      html += '</div>';
+      return;
+    }
+ 
+    /* Si hay varios ítems con guion o número, mostrar como lista con bullet */
+    var esLista = items.length > 1 ||
+                  /^[-\*\d]/.test(items[0]);
+ 
+    if (esLista) {
+      items.forEach(function (item, idx) {
+        var texto_item = item.replace(/^[-\*\d\.]+\s*/, '').replace(/\*\*/g, '');
+        html += '<div class="ia-item">'
+          + '<div class="ia-bullet ' + sec.bullet + '">' + (idx + 1) + '</div>'
+          + '<div>' + texto_item + '</div>'
+          + '</div>';
+      });
+    } else {
+      html += '<div class="ia-sec-cuerpo">'
+        + items.join(' ').replace(/\*\*/g, '')
+        + '</div>';
+    }
+ 
+    html += '</div>';
+  });
+ 
+  spinner.style.display = 'none';
+  output.innerHTML = html;
+})();
+</script>
+{% endif %}
+ 
+
+<script>
+// ── Datos desde el servidor ──────────────────────────────────────
+const labelsIngresos  = {{ labels          | tojson }};
+const valoresIngresos = {{ valores         | tojson }};
+const labelsServ      = {{ labels_servicios  | tojson }};
+const valoresServ     = {{ valores_servicios | tojson }};
+const labelsEst       = {{ estados_labels    | tojson }};
+const valoresEst      = {{ estados_valores   | tojson }};
+
+const COLORES = {
+  azul:   "#2563eb",
+  verde:  "#16a34a",
+  naranja:"#ea580c",
+  rojo:   "#dc2626",
+  morado: "#7c3aed",
+  teal:   "#0891b2",
+};
+
+// ── Gráfica 1: Ingresos por OT ───────────────────────────────────
+new Chart(document.getElementById("chartIngresos"), {
+  type: "bar",
+  data: {
+    labels: labelsIngresos,
+    datasets: [{
+      label: "Bs",
+      data: valoresIngresos,
+      backgroundColor: COLORES.azul + "cc",
+      borderColor: COLORES.azul,
+      borderWidth: 1,
+      borderRadius: 6,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: { callback: v => "Bs " + v.toLocaleString() }
+      }
+    }
+  }
+});
+
+// ── Gráfica 2: Estados (dona) ─────────────────────────────────────
+new Chart(document.getElementById("chartEstados"), {
+  type: "doughnut",
+  data: {
+    labels: labelsEst,
+    datasets: [{
+      data: valoresEst,
+      backgroundColor: [
+        COLORES.teal,
+        COLORES.azul,
+        COLORES.verde,
+        COLORES.morado,
+      ],
+      borderWidth: 2,
+      borderColor: "#fff",
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { position: "bottom", labels: { font: { size: 12 } } }
+    },
+    cutout: "60%",
+  }
+});
+
+// ── Gráfica 3: Servicios populares ───────────────────────────────
+new Chart(document.getElementById("chartServicios"), {
+  type: "bar",
+  data: {
+    labels: labelsServ,
+    datasets: [{
+      label: "Veces solicitado",
+      data: valoresServ,
+      backgroundColor: COLORES.verde + "cc",
+      borderColor: COLORES.verde,
+      borderWidth: 1,
+      borderRadius: 6,
+    }]
+  },
+  options: {
+    indexAxis: "y",          // barras horizontales
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { beginAtZero: true, ticks: { stepSize: 1 } }
+    }
+  }
+});
+</script>
+
+{% endblock %}

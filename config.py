@@ -21,7 +21,7 @@ SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 # IA — OpenRouter / DeepSeek (Fase 2)
 # ─────────────────────────────────────────────
-OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
+OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "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")
 OPENROUTER_MODEL   = "deepseek/deepseek-chat-v3-0324"
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
